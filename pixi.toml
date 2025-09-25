@@ -1,0 +1,56 @@
+[project]
+name = "quake-cli"
+version = "0.1.0"
+description = "Pull data from GeoNet API"
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "linux-64", "win-64"]
+
+[dependencies]
+python = ">=3.12,<3.13"
+# Core dependencies
+tenacity = ">=9.1.2,<10"
+httpx = ">=0.28.1,<0.29"
+pydantic = ">=2.11.9,<3"
+
+[feature.dev.dependencies]
+# Testing
+pytest = "*"
+pytest-cov = ">=6.2.1,<7"
+coverage = ">=7.0.0,<8"
+pytest-asyncio = "*"
+# Code quality
+mypy = "*"
+ruff = "*"
+pre-commit = ">=4.2.0,<5"
+# Build and distribution
+python-build = ">=1.2.2.post1,<2"
+twine = ">=6.1.0,<7"
+# CLI tools
+typer = ">=0.9.0,<1"
+rich = ">=13.0.0,<14"
+[feature.docs.dependencies]
+mkdocs = "*"
+mkdocs-material = "*"
+mkdocstrings = "*"
+mkdocstrings-python = "*"
+
+[pypi-dependencies]
+sh = ">=2.0.0,<3"
+
+[environments]
+default = ["dev", "docs"]
+dev = ["dev"]
+docs = ["docs"]
+
+[tasks]
+
+# Unified task scripts
+quality = { cmd = "python scripts/quality.py", description = "Code quality management (linting, formatting, type checking, coverage)" }
+dev = { cmd = "python scripts/dev.py", description = "Development environment management (setup, status, clean)" }
+build = { cmd = "python scripts/build.py", description = "Build and distribution management (packaging, uploading)" }
+docs = { cmd = "python scripts/docs.py", description = "Documentation management (serve, build, deploy)" }
+test = { cmd = "python scripts/test.py", description = "Testing management (unit, integration)" }
+
+# Unified operations
+clean = { cmd = "python scripts/test.py clean && python scripts/docs.py clean && python scripts/build.py clean && python scripts/dev.py clean", description = "Clean all project artifacts (test, docs, build, dev)" }
+check-all = { cmd = "python scripts/test.py all && python scripts/quality.py check", description = "Run comprehensive checks (all tests + quality)" }
