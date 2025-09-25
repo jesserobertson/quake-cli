@@ -16,8 +16,8 @@ class QuakeGeometry(BaseModel):
 
     type: Literal["Point"] = Field(description="Geometry type, always 'Point'")
     coordinates: list[float] = Field(
-        description="Coordinates as [longitude, latitude, depth]",
-        min_length=3,
+        description="Coordinates as [longitude, latitude] or [longitude, latitude, depth]",
+        min_length=2,
         max_length=3,
     )
 
@@ -32,9 +32,9 @@ class QuakeGeometry(BaseModel):
         return self.coordinates[1]
 
     @property
-    def depth(self) -> float:
-        """Depth coordinate (should match properties.depth)."""
-        return self.coordinates[2]
+    def depth(self) -> float | None:
+        """Depth coordinate if available (should match properties.depth)."""
+        return self.coordinates[2] if len(self.coordinates) > 2 else None
 
 
 type QualityType = Literal["best", "preliminary", "automatic", "deleted"]
@@ -49,7 +49,11 @@ class QuakeProperties(BaseModel):
     magnitude: float = Field(description="Summary magnitude")
     locality: str = Field(description="Nearest locality description")
     MMI: int | None = Field(
-        description="Modified Mercalli Intensity (-1 to 12)", ge=-1, le=12, default=None
+        alias="mmi",
+        description="Modified Mercalli Intensity (-1 to 12)",
+        ge=-1,
+        le=12,
+        default=None,
     )
     quality: QualityType = Field(description="Data quality indicator")
 
@@ -82,8 +86,8 @@ class QuakeFeature(BaseModel):
     def validate_geometry_depth_matches(
         cls, v: QuakeGeometry, info: ValidationInfo
     ) -> QuakeGeometry:
-        """Ensure geometry depth matches properties depth."""
-        if hasattr(info, "data") and "properties" in info.data:
+        """Ensure geometry depth matches properties depth if available."""
+        if hasattr(info, "data") and "properties" in info.data and v.depth is not None:
             properties_depth = info.data["properties"].depth
             if (
                 abs(v.depth - properties_depth) > 0.001

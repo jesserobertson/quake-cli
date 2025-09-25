@@ -61,10 +61,17 @@ __all__.extend(
 
 
 # Import main functionality
-# TODO: Import your main classes and functions here
-# Example:
-# from .core import MainClass, main_function
-# __all__.extend(["MainClass", "main_function"])
+from .client import GeoNetClient, GeoNetError
+from .models import QuakeFeature, QuakeResponse
+from .cli import app as cli_app
+
+__all__.extend([
+    "GeoNetClient",
+    "GeoNetError",
+    "QuakeFeature",
+    "QuakeResponse",
+    "cli_app"
+])
 
 
 # Lazy imports for optional dependencies

@@ -12,6 +12,9 @@ tenacity = ">=9.1.2,<10"
 httpx = ">=0.28.1,<0.29"
 pydantic = ">=2.11.9,<3"
 pytest-httpx = ">=0.35.0,<0.36"
+# CLI dependencies
+typer = ">=0.9.0,<1"
+rich = ">=13.0.0,<14"
 
 [feature.dev.dependencies]
 # Testing
@@ -26,9 +29,7 @@ pre-commit = ">=4.2.0,<5"
 # Build and distribution
 python-build = ">=1.2.2.post1,<2"
 twine = ">=6.1.0,<7"
-# CLI tools
-typer = ">=0.9.0,<1"
-rich = ">=13.0.0,<14"
+# CLI tools (moved to main dependencies)
 [feature.docs.dependencies]
 mkdocs = "*"
 mkdocs-material = "*"
@@ -44,6 +45,9 @@ dev = ["dev"]
 docs = ["docs"]
 
 [tasks]
+
+# CLI application
+quake = { cmd = "python -m quake_cli.cli", description = "Run the GeoNet earthquake CLI" }
 
 # Unified task scripts
 quality = { cmd = "python scripts/quality.py", description = "Code quality management (linting, formatting, type checking, coverage)" }

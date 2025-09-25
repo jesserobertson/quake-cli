@@ -164,7 +164,7 @@ class GeoNetClient:
         Get earthquake data from GeoNet API.
 
         Args:
-            mmi: Modified Mercalli Intensity filter (-1 to 12)
+            mmi: Modified Mercalli Intensity filter (-1 to 8, API range)
             limit: Maximum number of results (applied client-side)
 
         Returns:
@@ -175,10 +175,14 @@ class GeoNetClient:
         """
         params: dict[str, Any] = {}
 
+        # MMI parameter is required by the API
         if mmi is not None:
-            if not -1 <= mmi <= 12:
-                raise ValueError("MMI must be between -1 and 12")
+            if not -1 <= mmi <= 8:
+                raise ValueError("MMI must be between -1 and 8")
             params["MMI"] = mmi
+        else:
+            # Default to MMI=-1 to get all earthquakes
+            params["MMI"] = -1
 
         try:
             data = await self._make_request("quake", params)
@@ -213,7 +217,12 @@ class GeoNetClient:
 
         try:
             data = await self._make_request(f"quake/{public_id.strip()}")
-            return QuakeFeature.model_validate(data)
+            response = QuakeResponse.model_validate(data)
+
+            if response.is_empty:
+                raise GeoNetError(f"Earthquake {public_id} not found")
+
+            return response.features[0]
         except GeoNetAPIError as e:
             if e.status_code == 404:
                 raise GeoNetError(f"Earthquake {public_id} not found") from e
