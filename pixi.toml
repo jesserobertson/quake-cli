@@ -17,6 +17,8 @@ typer = ">=0.9.0,<1"
 rich = ">=13.0.0,<14"
 
 [feature.dev.dependencies]
+# Package installation
+pip = "*"
 # Testing
 pytest = "*"
 pytest-cov = ">=6.2.1,<7"
