@@ -72,13 +72,42 @@ def unit(
 
 
 @app.command()
+def integration(
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
+    fail_fast: bool = typer.Option(
+        False, "--fail-fast", "-x", help="Stop on first failure"
+    ),
+) -> None:
+    """Run integration tests (real API calls)."""
+    panel = Panel.fit("🌐 Running Integration Tests", style="cyan")
+    console.print(panel)
+
+    cmd = ["pytest", "tests/integration/", "--run-integration"]
+
+    if verbose:
+        cmd.append("-v")
+    if fail_fast:
+        cmd.append("-x")
+
+    if verbose:
+        # Show pytest output directly when verbose
+        run_command(cmd, real_time_output=True)
+    else:
+        # Use spinner for non-verbose mode
+        with Status("Running integration tests...", console=console, spinner="dots"):
+            run_command(cmd)
+
+    console.print("[green]✅ Integration tests completed![/green]")
+
+
+@app.command()
 def all(
     coverage: bool = typer.Option(
         True, "--coverage/--no-coverage", help="Generate coverage report"
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
 ) -> None:
-    """Run all tests (unit + docs)."""
+    """Run all tests (unit + integration + docs)."""
     panel = Panel.fit("🚀 Running All Tests", style="blue")
     console.print(panel)
 
