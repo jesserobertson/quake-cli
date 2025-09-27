@@ -32,7 +32,7 @@ class CommandResult:
 
 
 def run_command(
-    cmd: list[str], capture_output: bool = False, check: bool = True
+    cmd: list[str], capture_output: bool = False, check: bool = True, real_time_output: bool = False
 ) -> CommandResult:
     """Run a shell command with proper error handling using sh.
 
@@ -40,6 +40,7 @@ def run_command(
         cmd: Command and arguments as list
         capture_output: Whether to capture stdout/stderr
         check: Whether to raise on non-zero exit code
+        real_time_output: Whether to show output in real-time
 
     Returns:
         CommandResult with returncode, stdout, stderr
@@ -86,7 +87,12 @@ def run_command(
                 )
         else:
             # Run command without capturing output
-            command(*args)
+            if real_time_output:
+                # Force real-time output by explicitly setting _out and _err
+                import sys
+                command(*args, _out=sys.stdout, _err=sys.stderr)
+            else:
+                command(*args)
             return CommandResult()
 
         

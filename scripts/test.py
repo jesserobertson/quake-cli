@@ -59,8 +59,13 @@ def unit(
             ]
         )
 
-    with Status("Running unit tests...", console=console, spinner="dots"):
-        run_command(cmd)
+    if verbose:
+        # Show pytest output directly when verbose
+        run_command(cmd, real_time_output=True)
+    else:
+        # Use spinner for non-verbose mode
+        with Status("Running unit tests...", console=console, spinner="dots"):
+            run_command(cmd)
 
     
     console.print("[green]✅ Unit tests completed![/green]")
@@ -91,8 +96,13 @@ def all(
             ]
         )
 
-    with Status("Running all tests...", console=console, spinner="dots"):
-        run_command(cmd)
+    if verbose:
+        # Show pytest output directly when verbose
+        run_command(cmd, real_time_output=True)
+    else:
+        # Use spinner for non-verbose mode
+        with Status("Running all tests...", console=console, spinner="dots"):
+            run_command(cmd)
 
     console.print("[green]✅ All tests completed![/green]")
 
