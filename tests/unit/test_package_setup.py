@@ -48,13 +48,18 @@ def test_public_api():
     """Test that the public API is correctly exposed."""
     import quake_cli
 
-    # Check that __all__ contains expected items
+    # Check that __all__ contains expected items (including main functionality)
     expected_exports = {
         "__author__",
         "__email__",
         "__version__",
         "QuakeCliError",
         "QuakeCliConfigError",
+        "GeoNetClient",
+        "GeoNetError",
+        "QuakeFeature",
+        "QuakeResponse",
+        "cli_app",
     }
 
     assert set(quake_cli.__all__) == expected_exports

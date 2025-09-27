@@ -26,7 +26,7 @@ from quake_cli.models import QuakeFeature, QuakeResponse
 # Initialize Typer app and Rich console
 app = typer.Typer(
     name="quake",
-    help="CLI for querying GeoNet earthquake data",
+    help="GeoNet Earthquake CLI - Query earthquake data from GeoNet API",
     add_completion=False,
 )
 console = Console()
@@ -103,44 +103,38 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
     """Output data in the specified format."""
     match format_type.lower():
         case "json":
-            # Handle JSON output
-            print(f"DEBUG: data={type(data)}, QuakeResponse={QuakeResponse}")
-            try:
-                if isinstance(data, QuakeResponse):
-                    print("DEBUG: Branch 1 - QuakeResponse")
+            # Handle JSON output using match statements
+            match data:
+                case data if isinstance(data, QuakeResponse):
                     json_data = data.model_dump()
-                elif isinstance(data, (list, tuple)):
-                    print("DEBUG: Branch 2 - list/tuple")
+                case data if isinstance(data, (list, tuple)):
                     json_data: Any = [
                         item.model_dump() if hasattr(item, "model_dump") else item
                         for item in data
                     ]
-                else:
-                    print("DEBUG: Branch 3 - other")
+                case _:
                     json_data = data.model_dump() if hasattr(data, "model_dump") else data
-            except Exception as e:
-                print(f"DEBUG ERROR: {e}")
-                raise
 
             json_str = json.dumps(json_data, indent=2, default=str)
 
             if output_file:
                 output_file.write_text(json_str)
-                console.print(f"[green]JSON data written to {output_file}[/green]")
+                print(f"JSON data written to {str(output_file)}")
             else:
                 console.print(json_str)
 
         case "csv":
-            # Handle CSV output
-            if isinstance(data, QuakeResponse):
-                features = data.features
-            elif isinstance(data, QuakeFeature):
-                features = [data]
-            elif isinstance(data, (list, tuple)) and data:
-                features = data
-            else:
-                console.print("[red]CSV format only supported for earthquake data[/red]")
-                return
+            # Handle CSV output using match statements
+            match data:
+                case data if isinstance(data, QuakeResponse):
+                    features = data.features
+                case data if isinstance(data, QuakeFeature):
+                    features = [data]
+                case data if isinstance(data, (list, tuple)) and data:
+                    features = data
+                case _:
+                    console.print("[red]CSV format only supported for earthquake data[/red]")
+                    return
 
             if output_file:
                 with open(output_file, "w", newline="") as csvfile:
@@ -174,7 +168,7 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
                                 geom.latitude,
                             ]
                         )
-                console.print(f"[green]CSV data written to {output_file}[/green]")
+                print(f"CSV data written to {str(output_file)}")
             else:
                 # Output CSV to console
                 import io
@@ -213,19 +207,20 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
                 console.print(output.getvalue())
 
         case "table":
-            # Handle table output
-            if isinstance(data, QuakeResponse):
-                table = create_quakes_table(data.features)
-                console.print(table)
-            elif isinstance(data, QuakeFeature):
-                table = create_quakes_table([data], "Earthquake Details")
-                console.print(table)
-            elif isinstance(data, (list, tuple)) and data:
-                table = create_quakes_table(data)
-                console.print(table)
-            else:
-                # For other data types, show as JSON-like format
-                console.print(data)
+            # Handle table output using match statements
+            match data:
+                case data if isinstance(data, QuakeResponse):
+                    table = create_quakes_table(data.features)
+                    console.print(table)
+                case data if isinstance(data, QuakeFeature):
+                    table = create_quakes_table([data], "Earthquake Details")
+                    console.print(table)
+                case data if isinstance(data, (list, tuple)) and data:
+                    table = create_quakes_table(data)
+                    console.print(table)
+                case _:
+                    # For other data types, show as JSON-like format
+                    console.print(data)
 
         case _:
             console.print(f"[red]Unknown format: {format_type}[/red]")
@@ -448,8 +443,8 @@ def main(
     if version:
         from quake_cli import __version__
 
-        console.print(f"quake-cli version {__version__}")
-        raise typer.Exit()
+        print(f"quake-cli version {__version__}")
+        raise typer.Exit(0)
 
     if verbose:
         # Enable verbose logging for httpx and other libraries if needed

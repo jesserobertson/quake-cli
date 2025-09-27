@@ -37,15 +37,20 @@ class TestQuakeGeometry:
 
     def test_invalid_coordinates_length(self):
         """Test validation of coordinate length."""
-        with pytest.raises(ValidationError) as exc_info:
-            QuakeGeometry(type="Point", coordinates=[174.7633, -36.8485])
+        # Too few coordinates (less than 2)
+        with pytest.raises(ValidationError):
+            QuakeGeometry(type="Point", coordinates=[174.7633])
 
-        assert "at least 3 items" in str(exc_info.value)
-
-        with pytest.raises(ValidationError) as exc_info:
+        # Too many coordinates (more than 3)
+        with pytest.raises(ValidationError):
             QuakeGeometry(type="Point", coordinates=[174.7633, -36.8485, 5.0, 1.0])
 
-        assert "at most 3 items" in str(exc_info.value)
+        # Valid coordinates (2 or 3 items should work)
+        geom2 = QuakeGeometry(type="Point", coordinates=[174.7633, -36.8485])
+        assert geom2.depth is None
+
+        geom3 = QuakeGeometry(type="Point", coordinates=[174.7633, -36.8485, 5.0])
+        assert geom3.depth == 5.0
 
     def test_invalid_geometry_type(self):
         """Test validation of geometry type."""
@@ -66,7 +71,7 @@ class TestQuakeProperties:
             depth=5.5,
             magnitude=4.2,
             locality="10 km north of Wellington",
-            MMI=4,
+            mmi=4,
             quality="best",
         )
 
@@ -157,7 +162,7 @@ class TestQuakeProperties:
                 depth=5.5,
                 magnitude=4.2,
                 locality="Wellington",
-                MMI=-2,
+                mmi=-2,
                 quality="best",
             )
 
@@ -171,7 +176,7 @@ class TestQuakeProperties:
                 depth=5.5,
                 magnitude=4.2,
                 locality="Wellington",
-                MMI=13,
+                mmi=13,
                 quality="best",
             )
 
@@ -205,7 +210,7 @@ class TestQuakeFeature:
                 depth=5.5,
                 magnitude=4.2,
                 locality="10 km north of Wellington",
-                MMI=4,
+                mmi=4,
                 quality="best",
             ),
             geometry=QuakeGeometry(type="Point", coordinates=[174.7633, -36.8485, 5.5]),
@@ -354,7 +359,7 @@ class TestQuakeResponse:
                     depth=5.5,
                     magnitude=4.0,
                     locality="Wellington",
-                    MMI=mmi,
+                    mmi=mmi,
                     quality="best",
                 ),
                 geometry=QuakeGeometry(

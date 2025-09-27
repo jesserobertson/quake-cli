@@ -7,15 +7,19 @@
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://jesserobertson.github.io/quake-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Pull data from GeoNet API
+A modern Python CLI for querying earthquake data from the GeoNet API
 
 ## Features
 
+- 🌍 **GeoNet API Integration** - Query real-time earthquake data from New Zealand's GeoNet service
+- 🖥️ **Rich CLI Interface** - Beautiful command-line interface with progress indicators and formatted output
+- 📊 **Multiple Output Formats** - Export data as JSON, CSV, or formatted tables
+- ⚡ **Async Performance** - Fast async HTTP client for efficient API calls
+- 🔍 **Flexible Filtering** - Filter earthquakes by magnitude, MMI, and other criteria
 - 🚀 **Modern Python 3.12+** with comprehensive type hints
 - 📦 **Unified Development Experience** with pixi task management
 - 🧪 **Comprehensive Testing** with pytest
 - 🔍 **Code Quality Enforcement** with ruff and mypy (100% compliance)
-- ⚡ **Async Support** with both synchronous and asynchronous APIs
 - 📚 **Beautiful Documentation** with MkDocs Material
 - 🔒 **Security Scanning** and dependency management
 - 🤖 **Automated CI/CD** with GitHub Actions
@@ -28,26 +32,109 @@ Pull data from GeoNet API
 pip install quake_cli
 ```
 
-### Basic Usage
+### CLI Usage
 
-```python
-import quake_cli
+```bash
+# List recent earthquakes
+quake list
 
-# Your code here
-print("Hello from quake-cli!")
+# Get earthquakes with magnitude >= 4.0
+quake list --min-magnitude 4.0
+
+# Get a specific earthquake by ID
+quake get 2024p123456
+
+# Export to JSON
+quake list --format json --output earthquakes.json
+
+# Check API health
+quake health
 ```
 
-### Async Usage
+### Python API Usage
 
 ```python
 import asyncio
-import quake_cli
+from quake_cli import GeoNetClient
 
 async def main():
-    # Your async code here
-    print("Async hello from quake-cli!")
+    async with GeoNetClient() as client:
+        # Get recent earthquakes
+        response = await client.get_quakes(limit=10)
+        print(f"Found {response.count} earthquakes")
+
+        # Get specific earthquake
+        quake = await client.get_quake("2024p123456")
+        print(f"Magnitude: {quake.properties.magnitude}")
 
 asyncio.run(main())
+```
+
+## Python API
+
+### Core Classes
+
+#### GeoNetClient
+
+Async HTTP client for the GeoNet API:
+
+```python
+from quake_cli import GeoNetClient, GeoNetError
+
+async with GeoNetClient() as client:
+    # List earthquakes with optional filtering
+    response = await client.get_quakes(limit=50, mmi=4)
+
+    # Search with magnitude/MMI filters
+    response = await client.search_quakes(
+        min_magnitude=3.0,
+        max_magnitude=6.0,
+        limit=100
+    )
+
+    # Get specific earthquake details
+    earthquake = await client.get_quake("2024p123456")
+
+    # Get earthquake location history
+    history = await client.get_quake_history("2024p123456")
+
+    # Get earthquake statistics
+    stats = await client.get_quake_stats()
+
+    # Health check
+    is_healthy = await client.health_check()
+```
+
+#### Data Models
+
+Type-safe Pydantic models for earthquake data:
+
+```python
+from quake_cli import QuakeResponse, QuakeFeature
+
+# QuakeResponse contains multiple earthquake features
+response: QuakeResponse = await client.get_quakes()
+for feature in response.features:
+    props = feature.properties
+    geom = feature.geometry
+
+    print(f"ID: {props.publicID}")
+    print(f"Magnitude: {props.magnitude}")
+    print(f"Depth: {props.depth} km")
+    print(f"Location: {props.locality}")
+    print(f"Coordinates: {geom.latitude}, {geom.longitude}")
+```
+
+### Error Handling
+
+```python
+from quake_cli import GeoNetClient, GeoNetError
+
+try:
+    async with GeoNetClient() as client:
+        earthquake = await client.get_quake("invalid_id")
+except GeoNetError as e:
+    print(f"API error: {e}")
 ```
 
 ## Installation Options
@@ -82,13 +169,49 @@ pixi run test unit
 
 This project uses modern Python development practices with comprehensive tooling:
 
+### CLI Commands
+
+```bash
+# List earthquakes with filtering options
+quake list [OPTIONS]
+  --limit, -l INTEGER             Maximum number of earthquakes [default: 10]
+  --min-magnitude FLOAT           Minimum magnitude filter
+  --max-magnitude FLOAT           Maximum magnitude filter
+  --min-mmi INTEGER              Minimum Modified Mercalli Intensity
+  --max-mmi INTEGER              Maximum Modified Mercalli Intensity
+  --mmi INTEGER                  Specific MMI (-1 to 8, server-side filter)
+  --format, -f [table|json|csv]  Output format [default: table]
+  --output, -o PATH              Output file path
+
+# Get specific earthquake details
+quake get EARTHQUAKE_ID [OPTIONS]
+  --format, -f [table|json|csv]  Output format [default: table]
+  --output, -o PATH              Output file path
+
+# Get earthquake location history
+quake history EARTHQUAKE_ID [OPTIONS]
+  --format, -f [table|json|csv]  Output format [default: table]
+  --output, -o PATH              Output file path
+
+# Get earthquake statistics
+quake stats [OPTIONS]
+  --format, -f [table|json|csv]  Output format [default: table]
+  --output, -o PATH              Output file path
+
+# Check GeoNet API health
+quake health
+
+# Show version
+quake --version
+```
+
 ### Development Commands
 
 ```bash
 # Testing
 pixi run test unit                 # Run unit tests
 
-# Code Quality  
+# Code Quality
 pixi run quality check             # Run all quality checks
 pixi run quality fix               # Auto-fix issues
 
@@ -169,15 +292,26 @@ pixi run docs build
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## GeoNet API
+
+This tool queries earthquake data from [GeoNet](https://www.geonet.org.nz/), New Zealand's geological hazard information system. GeoNet provides real-time earthquake monitoring and data for New Zealand and surrounding areas.
+
+**Data Attribution**: Earthquake data provided by GeoNet (https://www.geonet.org.nz/)
+
 ## Support
 
 - **Documentation**: https://jesserobertson.github.io/quake-cli
 - **Issues**: https://github.com/jesserobertson/quake-cli/issues
 - **Discussions**: https://github.com/jesserobertson/quake-cli/discussions
+- **GeoNet API**: https://www.geonet.org.nz/data/supplementary/webapi
 
 ## Acknowledgments
 
+- **Data Source**: [GeoNet](https://www.geonet.org.nz/) - New Zealand's geological hazard monitoring system
 - Built with [pixi](https://pixi.sh) for modern Python dependency management
+- CLI powered by [Typer](https://typer.tiangolo.com/) with [Rich](https://rich.readthedocs.io/) formatting
+- Async HTTP client using [httpx](https://www.python-httpx.org/)
+- Type safety with [Pydantic](https://docs.pydantic.dev/) models
 - Tested with [pytest](https://pytest.org)
 - Documentation powered by [MkDocs](https://mkdocs.org) with [Material theme](https://squidfunk.github.io/mkdocs-material/)
 - Code quality enforced by [ruff](https://docs.astral.sh/ruff/) and [mypy](https://mypy.readthedocs.io)
