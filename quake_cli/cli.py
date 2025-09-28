@@ -8,22 +8,21 @@ from the GeoNet API using async operations and rich console output.
 import asyncio
 import csv
 import json
+from collections.abc import Callable
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import typer
+from logerr import Err, Ok, Result
 from loguru import logger
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from logerr import Err, Ok, Result
-
 from quake_cli.client import GeoNetClient, GeoNetError
-import quake_cli.models
 from quake_cli.models import QuakeFeature, QuakeResponse
 
 # Initialize Typer app and Rich console
@@ -49,7 +48,7 @@ def configure_logging(verbose: bool) -> None:
         logger.add(
             console.file,
             format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-            level="DEBUG"
+            level="DEBUG",
         )
         console.print("[dim]Verbose logging enabled[/dim]")
     else:
@@ -57,12 +56,14 @@ def configure_logging(verbose: bool) -> None:
         logger.remove()
         # Add a minimal handler that only shows critical errors to stderr
         import sys
+
         logger.add(
             sys.stderr,
             format="<red>{message}</red>",
             level="CRITICAL",
-            filter=lambda record: record["level"].name == "CRITICAL"
+            filter=lambda record: record["level"].name == "CRITICAL",
         )
+
 
 # Output format options
 OutputFormat = typer.Option(
@@ -166,7 +167,7 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
 
             if output_file:
                 output_file.write_text(json_str)
-                print(f"JSON data written to {str(output_file)}")
+                print(f"JSON data written to {output_file!s}")
             else:
                 console.print(json_str)
 
@@ -179,7 +180,9 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
             elif isinstance(data, list) and data:
                 features = data
             else:
-                console.print("[red]CSV format only supported for earthquake data[/red]")
+                console.print(
+                    "[red]CSV format only supported for earthquake data[/red]"
+                )
                 return
 
             if output_file:
@@ -214,7 +217,7 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
                                 geom.latitude,
                             ]
                         )
-                print(f"CSV data written to {str(output_file)}")
+                print(f"CSV data written to {output_file!s}")
             else:
                 # Output CSV to console
                 import io
@@ -297,7 +300,9 @@ def list(
     ),
     format: str = OutputFormat,
     output: Path = typer.Option(None, "--output", "-o", help="Output file path"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose logging"
+    ),
 ) -> None:
     """List recent earthquakes with optional filtering."""
 
@@ -352,7 +357,9 @@ def get(
     earthquake_id: str = typer.Argument(..., help="Earthquake public ID"),
     format: str = OutputFormat,
     output: Path = typer.Option(None, "--output", "-o", help="Output file path"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose logging"
+    ),
 ) -> None:
     """Get details for a specific earthquake."""
 
@@ -404,7 +411,9 @@ def history(
     earthquake_id: str = typer.Argument(..., help="Earthquake public ID"),
     format: str = OutputFormat,
     output: Path = typer.Option(None, "--output", "-o", help="Output file path"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose logging"
+    ),
 ) -> None:
     """Get location history for a specific earthquake."""
 
@@ -442,7 +451,9 @@ def history(
 def stats(
     format: str = OutputFormat,
     output: Path = typer.Option(None, "--output", "-o", help="Output file path"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose logging"
+    ),
 ) -> None:
     """Get earthquake statistics."""
 
@@ -471,7 +482,9 @@ def stats(
 @app.command()
 @handle_errors
 def health(
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose logging"
+    ),
 ) -> None:
     """Check GeoNet API health status."""
 

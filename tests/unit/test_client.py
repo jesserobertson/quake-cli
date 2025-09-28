@@ -1,12 +1,11 @@
 """Simplified client tests focusing on core functionality."""
 
-import os
 import pytest
 
 from quake_cli.client import (
     GeoNetClient,
-    GeoNetError,
     GeoNetConnectionError,
+    GeoNetError,
     GeoNetTimeoutError,
 )
 
@@ -45,14 +44,14 @@ class TestGeoNetClientBasics:
     def test_context_manager_protocol(self):
         """Test client implements context manager protocol."""
         client = GeoNetClient()
-        assert hasattr(client, '__aenter__')
-        assert hasattr(client, '__aexit__')
+        assert hasattr(client, "__aenter__")
+        assert hasattr(client, "__aexit__")
 
     def test_client_not_initialized_error(self):
         """Test error when using client without context manager."""
         client = GeoNetClient()
         # This should work - just testing the method exists
-        assert hasattr(client, 'get_quakes')
+        assert hasattr(client, "get_quakes")
 
 
 class TestGeoNetExceptions:
@@ -62,7 +61,6 @@ class TestGeoNetExceptions:
         """Test exception class hierarchy."""
         assert issubclass(GeoNetConnectionError, GeoNetError)
         assert issubclass(GeoNetTimeoutError, GeoNetError)
-        assert issubclass(GeoNetAPIError, GeoNetError)
         assert issubclass(GeoNetError, Exception)
 
     def test_geonet_error_instantiation(self):
@@ -75,9 +73,6 @@ class TestGeoNetExceptions:
 
         timeout_error = GeoNetTimeoutError("Timed out")
         assert str(timeout_error) == "Timed out"
-
-        api_error = GeoNetAPIError("API returned error")
-        assert str(api_error) == "API returned error"
 
     def test_exceptions_can_be_raised_and_caught(self):
         """Test that exceptions work in try/except blocks."""

@@ -14,6 +14,7 @@ from typer.testing import CliRunner
 from quake_cli.cli import app
 
 
+@pytest.mark.integration
 class TestCLIIntegration:
     """Test CLI commands with real API calls."""
 
@@ -46,9 +47,11 @@ class TestCLIIntegration:
         assert result.exit_code == 0
         # If earthquakes are found, should show them
         # If none found, should show appropriate message
-        assert ("earthquake" in result.stdout.lower() or
-                "no earthquake" in result.stdout.lower() or
-                "found" in result.stdout.lower())
+        assert (
+            "earthquake" in result.stdout.lower()
+            or "no earthquake" in result.stdout.lower()
+            or "found" in result.stdout.lower()
+        )
 
     def test_cli_list_command_json_format(self, runner):
         """Test list command with JSON output."""
@@ -84,12 +87,9 @@ class TestCLIIntegration:
             tmp_path = tmp.name
 
         try:
-            result = runner.invoke(app, [
-                "list",
-                "--format", "json",
-                "--output", tmp_path,
-                "--limit", "2"
-            ])
+            result = runner.invoke(
+                app, ["list", "--format", "json", "--output", tmp_path, "--limit", "2"]
+            )
 
             assert result.exit_code == 0
             assert f"JSON data written to {tmp_path}" in result.stdout
@@ -124,7 +124,10 @@ class TestCLIIntegration:
 
                     assert result.exit_code == 0
                     assert earthquake_id in result.stdout
-                    assert "Earthquake Details" in result.stdout or "earthquake" in result.stdout.lower()
+                    assert (
+                        "Earthquake Details" in result.stdout
+                        or "earthquake" in result.stdout.lower()
+                    )
             except (json.JSONDecodeError, KeyError, IndexError):
                 # If we can't parse the list result, skip this test
                 pytest.skip("Could not get valid earthquake ID from list command")
@@ -194,6 +197,7 @@ class TestCLIIntegration:
             assert cmd in result.stdout.lower()
 
 
+@pytest.mark.integration
 class TestCLIRobustness:
     """Test CLI robustness and edge cases."""
 
@@ -224,7 +228,18 @@ class TestCLIRobustness:
         assert result.exit_code == 0
 
         # Magnitude range
-        result = runner.invoke(app, ["list", "--min-magnitude", "2.0", "--max-magnitude", "5.0", "--limit", "5"])
+        result = runner.invoke(
+            app,
+            [
+                "list",
+                "--min-magnitude",
+                "2.0",
+                "--max-magnitude",
+                "5.0",
+                "--limit",
+                "5",
+            ],
+        )
         assert result.exit_code == 0
 
     def test_cli_output_formats_consistency(self, runner):

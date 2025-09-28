@@ -10,10 +10,11 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from quake_cli.client import GeoNetClient, GeoNetError
+from quake_cli.client import GeoNetClient
 from quake_cli.models import QuakeFeature, QuakeResponse
 
 
+@pytest.mark.integration
 class TestGeoNetAPIIntegration:
     """Test real API calls to GeoNet service."""
 
@@ -26,15 +27,20 @@ class TestGeoNetAPIIntegration:
     async def test_api_health_check(self, client):
         """Test that the GeoNet API is reachable."""
         async with client:
-            is_healthy = await client.health_check()
-            assert is_healthy is True
+            result = await client.health_check()
+            assert result.is_ok()
+            assert result.unwrap() is True
 
     @pytest.mark.asyncio
     async def test_get_recent_quakes(self, client):
         """Test getting recent earthquakes."""
         async with client:
-            response = await client.get_quakes(limit=5)
+            result = await client.get_quakes(limit=5)
+            assert result.is_ok(), (
+                f"API call failed: {result.unwrap_err() if result.is_err() else ''}"
+            )
 
+            response = result.unwrap()
             # Verify response structure
             assert isinstance(response, QuakeResponse)
             assert response.type == "FeatureCollection"
@@ -46,11 +52,11 @@ class TestGeoNetAPIIntegration:
                 quake = response.features[0]
                 assert isinstance(quake, QuakeFeature)
                 assert quake.type == "Feature"
-                assert hasattr(quake.properties, 'publicID')
-                assert hasattr(quake.properties, 'time')
-                assert hasattr(quake.properties, 'magnitude')
-                assert hasattr(quake.properties, 'depth')
-                assert hasattr(quake.geometry, 'coordinates')
+                assert hasattr(quake.properties, "publicID")
+                assert hasattr(quake.properties, "time")
+                assert hasattr(quake.properties, "magnitude")
+                assert hasattr(quake.properties, "depth")
+                assert hasattr(quake.geometry, "coordinates")
 
                 # Verify coordinate structure
                 coords = quake.geometry.coordinates
@@ -63,8 +69,12 @@ class TestGeoNetAPIIntegration:
         """Test getting earthquakes with MMI filter."""
         async with client:
             # Get earthquakes with MMI >= 3 (should be felt)
-            response = await client.get_quakes(mmi=3, limit=10)
+            result = await client.get_quakes(mmi=3, limit=10)
+            assert result.is_ok(), (
+                f"API call failed: {result.unwrap_err() if result.is_err() else ''}"
+            )
 
+            response = result.unwrap()
             assert isinstance(response, QuakeResponse)
             # MMI filtered results might be empty, but response should be valid
             assert response.type == "FeatureCollection"
@@ -75,8 +85,12 @@ class TestGeoNetAPIIntegration:
         """Test searching earthquakes with magnitude filter."""
         async with client:
             # Get earthquakes with magnitude >= 4.0
-            response = await client.search_quakes(min_magnitude=4.0, limit=15)
+            result = await client.search_quakes(min_magnitude=4.0, limit=15)
+            assert result.is_ok(), (
+                f"API call failed: {result.unwrap_err() if result.is_err() else ''}"
+            )
 
+            response = result.unwrap()
             assert isinstance(response, QuakeResponse)
             assert response.type == "FeatureCollection"
 
@@ -89,13 +103,21 @@ class TestGeoNetAPIIntegration:
         """Test getting a specific earthquake by ID."""
         async with client:
             # First get some recent earthquakes to get a valid ID
-            recent = await client.get_quakes(limit=5)
+            recent_result = await client.get_quakes(limit=5)
+            assert recent_result.is_ok(), (
+                f"Failed to get recent quakes: {recent_result.unwrap_err() if recent_result.is_err() else ''}"
+            )
 
+            recent = recent_result.unwrap()
             if recent.features:
                 # Test getting the first earthquake by ID
                 earthquake_id = recent.features[0].properties.publicID
-                specific_quake = await client.get_quake(earthquake_id)
+                specific_result = await client.get_quake(earthquake_id)
+                assert specific_result.is_ok(), (
+                    f"Failed to get specific quake: {specific_result.unwrap_err() if specific_result.is_err() else ''}"
+                )
 
+                specific_quake = specific_result.unwrap()
                 assert isinstance(specific_quake, QuakeFeature)
                 assert specific_quake.properties.publicID == earthquake_id
                 assert specific_quake.type == "Feature"
@@ -105,26 +127,33 @@ class TestGeoNetAPIIntegration:
         """Test getting earthquake location history."""
         async with client:
             # Get recent earthquakes to find one with potential history
-            recent = await client.get_quakes(limit=10)
+            recent_result = await client.get_quakes(limit=10)
+            assert recent_result.is_ok(), (
+                f"Failed to get recent quakes: {recent_result.unwrap_err() if recent_result.is_err() else ''}"
+            )
 
+            recent = recent_result.unwrap()
             if recent.features:
                 # Test history for the first earthquake
                 earthquake_id = recent.features[0].properties.publicID
-                try:
-                    history = await client.get_quake_history(earthquake_id)
-                    # History might be empty but should be a list
+                history_result = await client.get_quake_history(earthquake_id)
+
+                # History might fail for some earthquakes, which is acceptable
+                if history_result.is_ok():
+                    history = history_result.unwrap()
                     assert isinstance(history, list)
-                except GeoNetError:
-                    # Some earthquakes might not have history data
-                    # This is acceptable for the integration test
-                    pass
+                # If it errors, that's also acceptable for integration tests
 
     @pytest.mark.asyncio
     async def test_get_earthquake_stats(self, client):
         """Test getting earthquake statistics."""
         async with client:
-            stats = await client.get_quake_stats()
+            result = await client.get_quake_stats()
+            assert result.is_ok(), (
+                f"Failed to get stats: {result.unwrap_err() if result.is_err() else ''}"
+            )
 
+            stats = result.unwrap()
             # Verify stats structure
             assert isinstance(stats, dict)
             # Stats should contain some summary information
@@ -135,8 +164,8 @@ class TestGeoNetAPIIntegration:
         """Test that API errors are handled properly."""
         async with client:
             # Test with invalid earthquake ID
-            with pytest.raises(GeoNetError):
-                await client.get_quake("invalid_earthquake_id_12345")
+            result = await client.get_quake("invalid_earthquake_id_12345")
+            assert result.is_err(), "Expected error for invalid earthquake ID"
 
     @pytest.mark.asyncio
     async def test_concurrent_requests(self, client):
@@ -153,16 +182,20 @@ class TestGeoNetAPIIntegration:
 
             # Verify all requests succeeded
             assert len(results) == 3
-            assert isinstance(results[0], QuakeResponse)
-            assert isinstance(results[1], QuakeResponse)
-            assert isinstance(results[2], bool)
+            assert results[0].is_ok() and isinstance(results[0].unwrap(), QuakeResponse)
+            assert results[1].is_ok() and isinstance(results[1].unwrap(), QuakeResponse)
+            assert results[2].is_ok() and isinstance(results[2].unwrap(), bool)
 
     @pytest.mark.asyncio
     async def test_data_freshness(self, client):
         """Test that earthquake data is reasonably fresh."""
         async with client:
-            response = await client.get_quakes(limit=5)
+            result = await client.get_quakes(limit=5)
+            assert result.is_ok(), (
+                f"Failed to get quakes: {result.unwrap_err() if result.is_err() else ''}"
+            )
 
+            response = result.unwrap()
             if response.features:
                 # Check that at least one earthquake is from the last 30 days
                 now = datetime.now()
@@ -173,7 +206,9 @@ class TestGeoNetAPIIntegration:
                     quake_time = quake.properties.time
                     if isinstance(quake_time, str):
                         # Parse ISO timestamp
-                        quake_time = datetime.fromisoformat(quake_time.replace('Z', '+00:00'))
+                        quake_time = datetime.fromisoformat(
+                            quake_time.replace("Z", "+00:00")
+                        )
 
                     # Convert to naive datetime for comparison
                     if quake_time.tzinfo:
@@ -187,6 +222,7 @@ class TestGeoNetAPIIntegration:
                 assert recent_found, "No earthquakes found from the last 30 days"
 
 
+@pytest.mark.integration
 class TestGeoNetAPIRobustness:
     """Test API robustness and edge cases."""
 
@@ -200,8 +236,12 @@ class TestGeoNetAPIRobustness:
         """Test requesting a large number of earthquakes."""
         async with client:
             # Request up to 100 earthquakes (API might limit this)
-            response = await client.get_quakes(limit=100)
+            result = await client.get_quakes(limit=100)
+            assert result.is_ok(), (
+                f"Failed to get quakes: {result.unwrap_err() if result.is_err() else ''}"
+            )
 
+            response = result.unwrap()
             assert isinstance(response, QuakeResponse)
             assert len(response.features) <= 100
             # Should get at least some earthquakes (unless API is empty)
@@ -212,14 +252,22 @@ class TestGeoNetAPIRobustness:
         """Test edge cases for magnitude filtering."""
         async with client:
             # Test very high magnitude (unlikely to find matches)
-            response = await client.search_quakes(min_magnitude=8.0, limit=5)
+            result = await client.search_quakes(min_magnitude=8.0, limit=5)
+            assert result.is_ok(), (
+                f"Failed to search quakes: {result.unwrap_err() if result.is_err() else ''}"
+            )
+            response = result.unwrap()
             assert isinstance(response, QuakeResponse)
             # Might be empty, but should be valid response
 
             # Test reasonable magnitude range
-            response = await client.search_quakes(
+            result = await client.search_quakes(
                 min_magnitude=2.0, max_magnitude=10.0, limit=10
             )
+            assert result.is_ok(), (
+                f"Failed to search quakes: {result.unwrap_err() if result.is_err() else ''}"
+            )
+            response = result.unwrap()
             assert isinstance(response, QuakeResponse)
 
             # Verify magnitude constraints
@@ -231,12 +279,20 @@ class TestGeoNetAPIRobustness:
         """Test that the client can be reused across multiple sessions."""
         # First session
         async with client:
-            response1 = await client.get_quakes(limit=2)
+            result1 = await client.get_quakes(limit=2)
+            assert result1.is_ok(), (
+                f"Failed to get quakes: {result1.unwrap_err() if result1.is_err() else ''}"
+            )
+            response1 = result1.unwrap()
             assert isinstance(response1, QuakeResponse)
 
         # Second session - should work fine
         async with client:
-            response2 = await client.get_quakes(limit=2)
+            result2 = await client.get_quakes(limit=2)
+            assert result2.is_ok(), (
+                f"Failed to get quakes: {result2.unwrap_err() if result2.is_err() else ''}"
+            )
+            response2 = result2.unwrap()
             assert isinstance(response2, QuakeResponse)
 
         # Responses might be different due to timing, but both should be valid

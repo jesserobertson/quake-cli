@@ -64,12 +64,14 @@ __all__.extend(
 from .client import GeoNetClient, GeoNetError
 from .models import QuakeFeature, QuakeResponse
 
-__all__.extend([
-    "GeoNetClient",
-    "GeoNetError",
-    "QuakeFeature",
-    "QuakeResponse",
-])
+__all__.extend(
+    [
+        "GeoNetClient",
+        "GeoNetError",
+        "QuakeFeature",
+        "QuakeResponse",
+    ]
+)
 
 
 # Lazy imports for optional dependencies

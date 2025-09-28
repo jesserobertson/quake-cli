@@ -4,7 +4,7 @@ import pytest
 from typer.testing import CliRunner
 
 from quake_cli.cli import app, create_quakes_table, format_datetime, output_data
-from quake_cli.models import QuakeFeature, QuakeGeometry, QuakeProperties, QuakeResponse
+from quake_cli.models import QuakeFeature, QuakeGeometry, QuakeProperties
 
 
 class TestCLIBasics:
@@ -37,6 +37,7 @@ class TestCLIHelpers:
     def test_format_datetime(self):
         """Test datetime formatting."""
         from datetime import datetime
+
         dt = datetime(2024, 1, 15, 10, 30, 0)
         formatted = format_datetime(dt)
         assert formatted == "2024-01-15 10:30:00"
@@ -71,7 +72,6 @@ class TestCLIHelpers:
     def test_output_data_unknown_format(self):
         """Test output with unknown format."""
         import io
-        import sys
         from contextlib import redirect_stdout
 
         # Capture stdout

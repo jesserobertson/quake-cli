@@ -5,15 +5,13 @@ This module provides shared fixtures and configuration for integration tests
 that make real API calls to the GeoNet service.
 """
 
-import pytest
 
 
 def pytest_configure(config):
     """Configure pytest for integration tests."""
     # Add custom markers
     config.addinivalue_line(
-        "markers",
-        "integration: marks tests as integration tests (real API calls)"
+        "markers", "integration: marks tests as integration tests (real API calls)"
     )
 
 
