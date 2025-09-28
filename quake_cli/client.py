@@ -318,11 +318,8 @@ class GeoNetClient:
         """
         result = await self._make_request("")
 
-        match result:
-            case Err(error):
-                return Err(f"Health check failed: {error}")
-            case Ok(_):
-                return Ok(True)
+        # Use functional approach with .then() for better type safety
+        return result.then(lambda _: Ok(True)).map_err(lambda error: f"Health check failed: {error}")
 
 
 # Export public API

@@ -34,23 +34,5 @@ def handle_api_error(error: Exception) -> Result[T, str]:
     return Err(error_msg)
 
 
-def validate_response(data: dict) -> DataResult:
-    """
-    Validate API response data structure.
-
-    Args:
-        data: Raw API response data
-
-    Returns:
-        Result containing validated data or error message
-    """
-    if not isinstance(data, dict):
-        return Err(f"Invalid response type: expected dict, got {type(data).__name__}")
-
-    if "type" not in data:
-        return Err("Missing required field 'type' in response")
-
-    if data.get("type") != "FeatureCollection" and data.get("type") != "Feature":
-        return Err(f"Invalid response type: {data.get('type')}")
-
-    return Ok(data)
+# Note: validate_response function removed as it was unused and redundant
+# The type system provides sufficient validation for our use cases
