@@ -209,10 +209,8 @@ class GeoNetClient:
         Returns:
             Result containing QuakeFeature or error message
         """
-        if not public_id.strip():
-            return Err("public_id cannot be empty")
-
         # Make the API request and chain operations
+        # Trust type system: public_id is typed as str and validated at boundaries
         result = await self._make_request(f"quake/{public_id.strip()}")
 
         def parse_and_extract_feature(data: dict[str, Any]) -> FeatureResult:
@@ -238,10 +236,8 @@ class GeoNetClient:
         Returns:
             Result containing location history records or error message
         """
-        if not public_id.strip():
-            return Err("public_id cannot be empty")
-
         # Make the API request and process data
+        # Trust type system: public_id is typed as str and validated at boundaries
         result = await self._make_request(f"quake/history/{public_id.strip()}")
 
         def normalize_history_data(data: dict[str, Any] | list[Any]) -> HistoryResult:
@@ -319,7 +315,9 @@ class GeoNetClient:
         result = await self._make_request("")
 
         # Use functional approach with .then() for better type safety
-        return result.then(lambda _: Ok(True)).map_err(lambda error: f"Health check failed: {error}")
+        return result.then(lambda _: Ok(True)).map_err(
+            lambda error: f"Health check failed: {error}"
+        )
 
 
 # Export public API

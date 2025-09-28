@@ -7,7 +7,7 @@ making errors explicit and composable.
 
 from typing import TypeVar
 
-from logerr import Err, Ok, Result
+from logerr import Err, Result
 from loguru import logger
 
 from quake_cli.models import QuakeFeature, QuakeResponse

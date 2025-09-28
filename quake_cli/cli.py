@@ -331,7 +331,7 @@ def list_quakes(
                     response = handle_result(result)
                 else:
                     # Use client-side filtering
-                    result = await client.search_quakes(
+                    result = await client.search_quakes(  # type: ignore[unreachable]
                         min_magnitude=min_magnitude,
                         max_magnitude=max_magnitude,
                         min_mmi=min_mmi,
