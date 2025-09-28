@@ -206,8 +206,9 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
                     else:
                         console.print(data)
                 case _:
-                    # For other data types, show as JSON-like format
-                    console.print(data)
+                    # For other data types (like stats), output as JSON for readability
+                    json_str = json.dumps(data, indent=2, default=str)
+                    console.print(json_str)
 
         case _:
             console.print(f"[red]Unknown format: {format_type}[/red]")
