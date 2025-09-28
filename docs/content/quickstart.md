@@ -253,19 +253,6 @@ Now that you've got the basics:
 3. **[Data Models](api/models.md)** - Understanding the earthquake data structures
 4. **[HTTP Client](api/client.md)** - Complete client documentation with all methods
 
-## Command Line Interface
-
-While this guide focuses on library usage, quake-cli also provides a powerful CLI:
-
-```bash
-# Quick CLI examples
-quake list --limit 5                    # List recent earthquakes
-quake list --min-magnitude 4.0          # Filter by magnitude
-quake get 2024p123456                   # Get specific earthquake
-quake health                             # Check API status
-```
-
-For CLI documentation, see the [installation guide](installation.md).
 
 ## Getting Help
 

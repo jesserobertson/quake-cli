@@ -312,7 +312,8 @@ class GeoNetClient:
         Returns:
             Result containing True if API is accessible, error message otherwise
         """
-        result = await self._make_request("")
+        # Use the quake endpoint with a minimal request for health check
+        result = await self._make_request("quake", {"MMI": -1})
 
         # Use functional approach with .then() for better type safety
         return result.then(lambda _: Ok(True)).map_err(

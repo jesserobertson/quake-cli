@@ -6,7 +6,6 @@ This section provides comprehensive documentation for all public APIs in quake-c
 
 - **[Models](models.md)** - Pydantic data models for earthquake data
 - **[Client](client.md)** - Async HTTP client for GeoNet API
-- **[CLI](cli.md)** - Command-line interface utilities
 - **[Result Types](result.md)** - Functional error handling utilities
 
 ## Features
@@ -23,6 +22,7 @@ Here's a quick example of using the async client:
 ```python
 import asyncio
 from quake_cli.client import GeoNetClient
+from logerr import Ok, Err
 
 async def get_recent_quakes():
     async with GeoNetClient() as client:

@@ -84,7 +84,6 @@ nav:
     - Overview: api/index.md
     - Data Models: api/models.md
     - HTTP Client: api/client.md
-    - CLI Utilities: api/cli.md
     - Result Types: api/result.md
 
 extra:
