@@ -6,7 +6,6 @@ that make real API calls to the GeoNet service.
 """
 
 
-
 def pytest_configure(config):
     """Configure pytest for integration tests."""
     # Add custom markers

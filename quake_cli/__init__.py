@@ -60,10 +60,7 @@ __all__.extend(
 )
 
 
-# Import main functionality (exclude CLI to avoid circular imports)
-from .client import GeoNetClient, GeoNetError
-from .models import QuakeFeature, QuakeResponse
-
+# Add exported classes to __all__ (they will be imported later if needed)
 __all__.extend(
     [
         "GeoNetClient",
@@ -72,6 +69,10 @@ __all__.extend(
         "QuakeResponse",
     ]
 )
+
+# Import main functionality (exclude CLI to avoid circular imports)
+from .client import GeoNetClient, GeoNetError  # noqa: E402, F401
+from .models import QuakeFeature, QuakeResponse  # noqa: E402, F401
 
 
 # Lazy imports for optional dependencies

@@ -111,7 +111,7 @@ def all(
     panel = Panel.fit("🚀 Running All Tests", style="blue")
     console.print(panel)
 
-    cmd = ["pytest", "tests/", "--doctest-glob='*.md'", "docs/content/"]
+    cmd = ["pytest", "tests/", "--doctest-glob='*.md'", "docs/content/", "--run-integration"]
 
     if verbose:
         cmd.append("-v")

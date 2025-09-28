@@ -45,8 +45,10 @@ def configure_logging(verbose: bool) -> None:
     if verbose:
         # Enable detailed logging with timestamps and levels
         logger.remove()  # Remove default handler
+        import sys
+
         logger.add(
-            console.file,
+            sys.stderr,
             format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
             level="DEBUG",
         )
@@ -103,13 +105,13 @@ def handle_errors(func: Callable[..., Any]) -> Callable[..., Any]:
             raise
         except GeoNetError as e:
             console.print(f"[red]Error:[/red] {e}")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from e
         except KeyboardInterrupt:
             console.print("\n[yellow]Interrupted by user[/yellow]")
-            raise typer.Exit(130)
+            raise typer.Exit(130) from None
         except Exception as e:
             console.print(f"[red]Unexpected error:[/red] {e}")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from e
 
     return wrapper
 
@@ -153,17 +155,18 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
     match format_type.lower():
         case "json":
             # Handle JSON output
+            json_output: Any
             if hasattr(data, "model_dump"):
-                json_data = data.model_dump()
+                json_output = data.model_dump()
             elif isinstance(data, list):
-                json_data: Any = [
+                json_output = [
                     item.model_dump() if hasattr(item, "model_dump") else item
                     for item in data
                 ]
             else:
-                json_data = data
+                json_output = data
 
-            json_str = json.dumps(json_data, indent=2, default=str)
+            json_str = json.dumps(json_output, indent=2, default=str)
 
             if output_file:
                 output_file.write_text(json_str)
@@ -265,8 +268,12 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
                     table = create_quakes_table([data], "Earthquake Details")
                     console.print(table)
                 case data if isinstance(data, (list, tuple)) and data:
-                    table = create_quakes_table(data)
-                    console.print(table)
+                    # Ensure data is a list of QuakeFeature objects
+                    if all(isinstance(item, QuakeFeature) for item in data):
+                        table = create_quakes_table(list(data))
+                        console.print(table)
+                    else:
+                        console.print(data)
                 case _:
                     # For other data types, show as JSON-like format
                     console.print(data)
@@ -275,9 +282,9 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
             console.print(f"[red]Unknown format: {format_type}[/red]")
 
 
-@app.command()
+@app.command("list")
 @handle_errors
-def list(
+def list_quakes(
     limit: int = typer.Option(
         10, "--limit", "-l", help="Maximum number of earthquakes to return"
     ),
@@ -386,7 +393,7 @@ def get(
 
         if format.lower() == "table":
             # Show additional details for single earthquake
-            props = feature.properties
+            _ = feature.properties  # Access properties for potential future use
             geom = feature.geometry
 
             details_table = Table(
