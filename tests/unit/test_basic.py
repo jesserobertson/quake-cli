@@ -4,7 +4,7 @@ Basic unit tests for quake-cli.
 
 import pytest
 
-import quake_cli
+import gnet
 
 
 class TestBasicFunctionality:
@@ -12,17 +12,17 @@ class TestBasicFunctionality:
 
     def test_package_imports(self):
         """Test that the package can be imported."""
-        assert quake_cli is not None
+        assert gnet is not None
 
     def test_package_has_version(self):
         """Test that the package has a version attribute."""
-        assert hasattr(quake_cli, "__version__")
-        assert isinstance(quake_cli.__version__, str)
-        assert len(quake_cli.__version__) > 0
+        assert hasattr(gnet, "__version__")
+        assert isinstance(gnet.__version__, str)
+        assert len(gnet.__version__) > 0
 
     def test_package_version_format(self):
         """Test that the version follows semantic versioning."""
-        version = quake_cli.__version__
+        version = gnet.__version__
         # Basic semantic version format check (major.minor.patch)
         parts = version.split(".")
         assert len(parts) >= 2, f"Version {version} should have at least major.minor"
@@ -38,10 +38,10 @@ class TestErrorHandling:
     def test_import_all_public_modules(self):
         """Test that all public modules can be imported without errors."""
         # This test helps catch import-time errors
-        import quake_cli
+        import gnet
 
         # Test that we can access common attributes without errors
-        dir(quake_cli)
+        dir(gnet)
 
 
 class TestTypeHints:
@@ -49,11 +49,11 @@ class TestTypeHints:
 
     def test_package_is_typed(self):
         """Test that the package includes type information."""
-        import quake_cli
+        import gnet
 
         # Check if py.typed file exists (indicates PEP 561 compliance)
         # This is more of a packaging test
-        package_path = quake_cli.__file__
+        package_path = gnet.__file__
         if package_path:
             from pathlib import Path
 

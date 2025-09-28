@@ -2,7 +2,7 @@
 
 import pytest
 
-from quake_cli.client import (
+from gnet.client import (
     GeoNetClient,
     GeoNetConnectionError,
     GeoNetError,

@@ -10,12 +10,12 @@ from typing import TypeVar
 from logerr import Err, Result
 from loguru import logger
 
-from gnet.models import QuakeFeature, QuakeResponse
+from gnet.models import quake
 
 # Type aliases for common Result types
 T = TypeVar("T")
-QuakeResult = Result[QuakeResponse, str]
-FeatureResult = Result[QuakeFeature, str]
+QuakeResult = Result[quake.Response, str]
+FeatureResult = Result[quake.Feature, str]
 DataResult = Result[dict, str]
 
 

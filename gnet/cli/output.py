@@ -143,7 +143,9 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
                                 props.publicID,
                                 props.time.origin.isoformat(),
                                 props.magnitude.value,
-                                abs(props.location.elevation or 0),  # Convert elevation back to depth
+                                abs(
+                                    props.location.elevation or 0
+                                ),  # Convert elevation back to depth
                                 props.intensity.mmi if props.intensity else None,
                                 props.quality.level,
                                 props.location.locality or "Unknown",
@@ -179,7 +181,9 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
                             props.publicID,
                             props.time.origin.isoformat(),
                             props.magnitude.value,
-                            abs(props.location.elevation or 0),  # Convert elevation back to depth
+                            abs(
+                                props.location.elevation or 0
+                            ),  # Convert elevation back to depth
                             props.intensity.mmi if props.intensity else None,
                             props.quality.level,
                             props.location.locality or "Unknown",
@@ -204,7 +208,9 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
                 case strong_motion.Response():
                     # Strong motion data is handled directly in the strong motion command
                     return
-                case list() | tuple() if data and all(isinstance(item, quake.Feature) for item in data):
+                case list() | tuple() if data and all(
+                    isinstance(item, quake.Feature) for item in data
+                ):
                     table = create_quakes_table(list(data))
                     console.print(table)
                 case list() | tuple() if data:
@@ -218,9 +224,7 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
             console.print(f"[red]Unknown format: {format_type}[/red]")
 
 
-def create_intensity_table(
-    response: intensity.Response, intensity_type: str
-) -> Table:
+def create_intensity_table(response: intensity.Response, intensity_type: str) -> Table:
     """Create a rich table for intensity data."""
     title = f"Intensity Data ({intensity_type.title()})"
     if response.count_mmi:
@@ -306,11 +310,11 @@ def create_volcano_quakes_table(response: volcano.quake.Response) -> Table:
 
         table.add_row(
             props.publicID,
-            format_datetime(props.time),
-            f"{props.magnitude:.1f}",
-            f"{props.depth:.1f}",
-            props.volcanoID or "-",
-            props.locality,
+            format_datetime(props.time.origin),
+            f"{props.magnitude.value:.1f}",
+            f"{abs(props.location.elevation or 0.0):.1f}",  # Convert elevation back to depth
+            getattr(props, "volcanoID", None) or "-",
+            props.location.locality,
         )
 
     return table
@@ -327,15 +331,15 @@ def format_intensity_output(
         case "json":
             output_data(data, "json")
         case "csv":
-            console.print("[yellow]CSV format not yet supported for intensity data[/yellow]")
+            console.print(
+                "[yellow]CSV format not yet supported for intensity data[/yellow]"
+            )
             output_data(data, "json")
         case _:
             console.print(f"[red]Unknown format: {format_type}[/red]")
 
 
-def format_volcano_alerts_output(
-    data: volcano.Response, format_type: str
-) -> None:
+def format_volcano_alerts_output(data: volcano.Response, format_type: str) -> None:
     """Format and output volcano alert data."""
     match format_type.lower():
         case "table":
@@ -344,7 +348,9 @@ def format_volcano_alerts_output(
         case "json":
             output_data(data, "json")
         case "csv":
-            console.print("[yellow]CSV format not yet supported for volcano alerts[/yellow]")
+            console.print(
+                "[yellow]CSV format not yet supported for volcano alerts[/yellow]"
+            )
             output_data(data, "json")
         case _:
             console.print(f"[red]Unknown format: {format_type}[/red]")
@@ -361,7 +367,9 @@ def format_volcano_quakes_output(
         case "json":
             output_data(data, "json")
         case "csv":
-            console.print("[yellow]CSV format not yet supported for volcano earthquakes[/yellow]")
+            console.print(
+                "[yellow]CSV format not yet supported for volcano earthquakes[/yellow]"
+            )
             output_data(data, "json")
         case _:
             console.print(f"[red]Unknown format: {format_type}[/red]")

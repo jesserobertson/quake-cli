@@ -47,9 +47,7 @@ def get_intensity(
         gnet quake intensity measured --publicid 2025p730586
         gnet quake intensity reported --aggregation median --format json
     """
-    asyncio.run(
-        async_get_intensity(intensity_type, publicid, aggregation, format_type)
-    )
+    asyncio.run(async_get_intensity(intensity_type, publicid, aggregation, format_type))
 
 
 def get_intensity_reported(
@@ -124,9 +122,7 @@ async def async_get_intensity(
         raise typer.Exit(1)
 
     if aggregation and aggregation not in ["max", "median"]:
-        console.print(
-            "[red]Error:[/red] aggregation must be 'max' or 'median'"
-        )
+        console.print("[red]Error:[/red] aggregation must be 'max' or 'median'")
         raise typer.Exit(1)
 
     async with GeoNetClient() as client:

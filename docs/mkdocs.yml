@@ -85,6 +85,8 @@ nav:
     - Data Models: api/models.md
     - HTTP Client: api/client.md
     - Result Types: api/result.md
+  - Development:
+    - Testing: testing.md
 
 extra:
   social:

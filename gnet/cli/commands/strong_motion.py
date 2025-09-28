@@ -31,7 +31,9 @@ async def get_strong_motion(
     output: Path = typer.Option(None, "--output", "-o", help="Output file path"),
     network: str = typer.Option(None, "--network", "-n", help="Filter by network"),
     min_mmi: float = typer.Option(None, "--min-mmi", help="Minimum MMI threshold"),
-    max_distance: float = typer.Option(None, "--max-distance", help="Maximum distance from epicenter (km)"),
+    max_distance: float = typer.Option(
+        None, "--max-distance", help="Maximum distance from epicenter (km)"
+    ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose logging"
     ),
@@ -49,33 +51,41 @@ async def get_strong_motion(
         TextColumn("[progress.description]{task.description}"),
         console=progress_console,
     ) as progress:
-        task = progress.add_task(f"Fetching strong motion data for {earthquake_id}...", total=None)
+        task = progress.add_task(
+            f"Fetching strong motion data for {earthquake_id}...", total=None
+        )
 
         async with GeoNetClient() as client:
             result = await client.get_strong_motion(earthquake_id)
             response = handle_result(result)
 
-        progress.update(task, completed=True, description="Strong motion data retrieved")
+        progress.update(
+            task, completed=True, description="Strong motion data retrieved"
+        )
 
     # Apply filters
     filtered_features = response.features
 
     if network:
         filtered_features = [
-            f for f in filtered_features
+            f
+            for f in filtered_features
             if f.properties.network.lower() == network.lower()
         ]
 
     if min_mmi is not None:
         filtered_features = [
-            f for f in filtered_features
+            f
+            for f in filtered_features
             if f.properties.mmi is not None and f.properties.mmi >= min_mmi
         ]
 
     if max_distance is not None:
         filtered_features = [
-            f for f in filtered_features
-            if f.properties.distance is not None and f.properties.distance <= max_distance
+            f
+            for f in filtered_features
+            if f.properties.distance is not None
+            and f.properties.distance <= max_distance
         ]
 
     # Create filtered response for output
@@ -89,7 +99,7 @@ async def get_strong_motion(
         metadata_table = Table(
             title=f"Earthquake Information - {earthquake_id}",
             show_header=True,
-            header_style="bold blue"
+            header_style="bold blue",
         )
         metadata_table.add_column("Property", style="cyan")
         metadata_table.add_column("Value", style="white")
@@ -101,7 +111,10 @@ async def get_strong_motion(
         if response.metadata.description:
             metadata_table.add_row("Description", response.metadata.description)
         if response.metadata.latitude and response.metadata.longitude:
-            metadata_table.add_row("Location", f"{response.metadata.latitude:.4f}°, {response.metadata.longitude:.4f}°")
+            metadata_table.add_row(
+                "Location",
+                f"{response.metadata.latitude:.4f}°, {response.metadata.longitude:.4f}°",
+            )
 
         console.print(metadata_table)
 
@@ -109,23 +122,37 @@ async def get_strong_motion(
         stations_table = Table(
             title=f"Strong Motion Stations ({len(filtered_features)} stations)",
             show_header=True,
-            header_style="bold magenta"
+            header_style="bold magenta",
         )
         stations_table.add_column("Station", style="cyan", width=12)
         stations_table.add_column("Network", style="blue", width=8)
-        stations_table.add_column("Distance (km)", justify="right", style="green", width=12)
+        stations_table.add_column(
+            "Distance (km)", justify="right", style="green", width=12
+        )
         stations_table.add_column("MMI", justify="right", style="red", width=6)
-        stations_table.add_column("PGA-H (g)", justify="right", style="yellow", width=10)
-        stations_table.add_column("PGA-V (g)", justify="right", style="yellow", width=10)
+        stations_table.add_column(
+            "PGA-H (g)", justify="right", style="yellow", width=10
+        )
+        stations_table.add_column(
+            "PGA-V (g)", justify="right", style="yellow", width=10
+        )
         stations_table.add_column("Location", style="white")
 
         for feature in filtered_features:
             props = feature.properties
 
-            distance_str = f"{props.distance:.1f}" if props.distance is not None else "-"
+            distance_str = (
+                f"{props.distance:.1f}" if props.distance is not None else "-"
+            )
             mmi_str = f"{props.mmi:.1f}" if props.mmi is not None else "-"
-            pga_h_str = f"{props.pga_horizontal:.3f}" if props.pga_horizontal is not None else "-"
-            pga_v_str = f"{props.pga_vertical:.3f}" if props.pga_vertical is not None else "-"
+            pga_h_str = (
+                f"{props.pga_horizontal:.3f}"
+                if props.pga_horizontal is not None
+                else "-"
+            )
+            pga_v_str = (
+                f"{props.pga_vertical:.3f}" if props.pga_vertical is not None else "-"
+            )
 
             stations_table.add_row(
                 props.station,
@@ -142,17 +169,27 @@ async def get_strong_motion(
         # Show summary statistics
         if filtered_features:
             stats_table = Table(
-                title="Summary Statistics",
-                show_header=True,
-                header_style="bold blue"
+                title="Summary Statistics", show_header=True, header_style="bold blue"
             )
             stats_table.add_column("Metric", style="cyan")
             stats_table.add_column("Value", style="white")
 
             # Calculate stats
-            distances = [f.properties.distance for f in filtered_features if f.properties.distance is not None]
-            mmis = [f.properties.mmi for f in filtered_features if f.properties.mmi is not None]
-            pga_h_values = [f.properties.pga_horizontal for f in filtered_features if f.properties.pga_horizontal is not None]
+            distances = [
+                f.properties.distance
+                for f in filtered_features
+                if f.properties.distance is not None
+            ]
+            mmis = [
+                f.properties.mmi
+                for f in filtered_features
+                if f.properties.mmi is not None
+            ]
+            pga_h_values = [
+                f.properties.pga_horizontal
+                for f in filtered_features
+                if f.properties.pga_horizontal is not None
+            ]
 
             stats_table.add_row("Total Stations", str(len(filtered_features)))
 
@@ -167,7 +204,7 @@ async def get_strong_motion(
                 stats_table.add_row("Max PGA-H", f"{max(pga_h_values):.3f} g")
 
             # Network breakdown
-            networks = {}
+            networks: dict[str, int] = {}
             for feature in filtered_features:
                 net = feature.properties.network
                 networks[net] = networks.get(net, 0) + 1

@@ -1,267 +1,155 @@
 """
-Integration tests for CLI commands against real GeoNet API.
+Integration tests for CLI commands using generated mock data.
 
-These tests verify that the CLI commands work correctly with the live API.
+These tests verify the complete CLI functionality using real API response
+data saved as mocks, ensuring the full command pipeline works correctly.
 """
 
 import json
-import tempfile
-from pathlib import Path
+from unittest.mock import AsyncMock, patch
 
 import pytest
+from httpx import Response
 from typer.testing import CliRunner
 
-from quake_cli.cli import app
+from gnet.cli.main import app
+from tests.mocks.loader import mock_loader
 
 
-@pytest.mark.integration
 class TestCLIIntegration:
-    """Test CLI commands with real API calls."""
+    """Integration tests for CLI commands with mock data."""
 
     @pytest.fixture
     def runner(self):
-        """CLI test runner."""
+        """Test runner fixture."""
         return CliRunner()
 
-    def test_cli_health_command(self, runner):
-        """Test health command with real API."""
-        result = runner.invoke(app, ["health"])
+    @pytest.fixture
+    def mock_response(self):
+        """Create a mock httpx.Response."""
 
-        assert result.exit_code == 0
-        # Should indicate API is healthy or unhealthy
-        output = result.stdout.lower()
-        assert "api" in output or "geonet" in output
+        def _create_mock_response(data, status_code=200):
+            mock_resp = AsyncMock(spec=Response)
+            mock_resp.status_code = status_code
+            mock_resp.json.return_value = data
+            mock_resp.text = str(data) if isinstance(data, dict) else data
+            return mock_resp
 
-    def test_cli_list_command_basic(self, runner):
-        """Test basic list command."""
-        result = runner.invoke(app, ["list", "--limit", "5"])
+        return _create_mock_response
 
-        assert result.exit_code == 0
-        # Should show some earthquake data or "No earthquakes found"
-        assert "earthquake" in result.stdout.lower() or "found" in result.stdout.lower()
+    def test_quake_list_command_integration(self, runner, mock_response):
+        """Test 'gnet quake list' with real mock data."""
+        mock_data = mock_loader.get_mock_data("quakes_all")
+        assert mock_data is not None
 
-    def test_cli_list_command_with_magnitude_filter(self, runner):
-        """Test list command with magnitude filter."""
-        result = runner.invoke(app, ["list", "--min-magnitude", "4.0", "--limit", "3"])
+        with patch("httpx.AsyncClient.get") as mock_get:
+            mock_get.return_value = mock_response(mock_data)
 
-        assert result.exit_code == 0
-        # If earthquakes are found, should show them
-        # If none found, should show appropriate message
-        assert (
-            "earthquake" in result.stdout.lower()
-            or "no earthquake" in result.stdout.lower()
-            or "found" in result.stdout.lower()
-        )
-
-    def test_cli_list_command_json_format(self, runner):
-        """Test list command with JSON output."""
-        result = runner.invoke(app, ["list", "--format", "json", "--limit", "2"])
-
-        assert result.exit_code == 0
-
-        # Should be valid JSON
-        try:
-            data = json.loads(result.stdout)
-            assert isinstance(data, dict)
-            assert "type" in data
-            assert data["type"] == "FeatureCollection"
-            assert "features" in data
-            assert isinstance(data["features"], list)
-        except json.JSONDecodeError:
-            pytest.fail("CLI did not output valid JSON")
-
-    def test_cli_list_command_csv_format(self, runner):
-        """Test list command with CSV output."""
-        result = runner.invoke(app, ["list", "--format", "csv", "--limit", "3"])
-
-        assert result.exit_code == 0
-
-        # Should contain CSV headers
-        assert "ID" in result.stdout
-        assert "Time" in result.stdout
-        assert "Magnitude" in result.stdout
-
-    def test_cli_list_with_output_file(self, runner):
-        """Test list command with file output."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp:
-            tmp_path = tmp.name
-
-        try:
-            result = runner.invoke(
-                app, ["list", "--format", "json", "--output", tmp_path, "--limit", "2"]
-            )
+            result = runner.invoke(app, ["quake", "list", "--limit", "5"])
 
             assert result.exit_code == 0
-            assert f"JSON data written to {tmp_path}" in result.stdout
+            # Check that output contains earthquake data
+            assert "Recent Earthquakes" in result.stdout
 
-            # Verify file was created and contains valid JSON
-            output_file = Path(tmp_path)
-            assert output_file.exists()
+    def test_quake_list_json_output(self, runner, mock_response):
+        """Test 'gnet quake list' with JSON output format."""
+        mock_data = mock_loader.get_mock_data("quakes_all")
+        assert mock_data is not None
 
-            content = output_file.read_text()
-            data = json.loads(content)
-            assert isinstance(data, dict)
-            assert data["type"] == "FeatureCollection"
+        with patch("httpx.AsyncClient.get") as mock_get:
+            mock_get.return_value = mock_response(mock_data)
 
-        finally:
-            # Clean up
-            if Path(tmp_path).exists():
-                Path(tmp_path).unlink()
+            result = runner.invoke(app, ["quake", "list", "--format", "json"])
 
-    def test_cli_get_command_with_real_earthquake(self, runner):
-        """Test get command with a real earthquake ID."""
-        # First get a list to find a real earthquake ID
-        list_result = runner.invoke(app, ["list", "--format", "json", "--limit", "1"])
-
-        if list_result.exit_code == 0:
+            assert result.exit_code == 0
+            # Should be valid JSON
             try:
-                data = json.loads(list_result.stdout)
-                if data["features"]:
-                    earthquake_id = data["features"][0]["properties"]["publicID"]
+                output_data = json.loads(result.stdout)
+                assert "features" in output_data
+                assert len(output_data["features"]) > 0
+            except json.JSONDecodeError:
+                pytest.fail("Output is not valid JSON")
 
-                    # Now test getting this specific earthquake
-                    result = runner.invoke(app, ["get", earthquake_id])
+    def test_quake_stats_command_integration(self, runner, mock_response):
+        """Test 'gnet quake stats' command."""
+        mock_data = mock_loader.get_mock_data("quake_stats")
+        assert mock_data is not None
 
-                    assert result.exit_code == 0
-                    assert earthquake_id in result.stdout
-                    assert (
-                        "Earthquake Details" in result.stdout
-                        or "earthquake" in result.stdout.lower()
-                    )
-            except (json.JSONDecodeError, KeyError, IndexError):
-                # If we can't parse the list result, skip this test
-                pytest.skip("Could not get valid earthquake ID from list command")
-        else:
-            pytest.skip("List command failed, cannot test get command")
+        with patch("httpx.AsyncClient.get") as mock_get:
+            mock_get.return_value = mock_response(mock_data)
 
-    def test_cli_stats_command(self, runner):
-        """Test stats command."""
-        result = runner.invoke(app, ["stats"])
+            result = runner.invoke(app, ["quake", "stats"])
 
-        assert result.exit_code == 0
-        # Should show some statistics
-        assert len(result.stdout.strip()) > 0
+            assert result.exit_code == 0
+            # Should contain statistics data
+            assert "magnitudeCount" in result.stdout
+            assert "rate" in result.stdout
 
-    def test_cli_history_command_with_real_earthquake(self, runner):
-        """Test history command with a real earthquake ID."""
-        # First get a list to find a real earthquake ID
-        list_result = runner.invoke(app, ["list", "--format", "json", "--limit", "1"])
+    def test_quake_health_command_integration(self, runner, mock_response):
+        """Test 'gnet quake health' command."""
+        mock_data = mock_loader.get_mock_data("quakes_all")
 
-        if list_result.exit_code == 0:
-            try:
-                data = json.loads(list_result.stdout)
-                if data["features"]:
-                    earthquake_id = data["features"][0]["properties"]["publicID"]
+        with patch("httpx.AsyncClient.get") as mock_get:
+            mock_get.return_value = mock_response(mock_data)
 
-                    # Test getting history for this earthquake
-                    result = runner.invoke(app, ["history", earthquake_id])
+            result = runner.invoke(app, ["quake", "health"])
 
-                    # History command might succeed or fail depending on whether
-                    # the earthquake has history data
-                    assert result.exit_code in [0, 1]  # Both are acceptable
+            assert result.exit_code == 0
+            assert "✅" in result.stdout or "healthy" in result.stdout.lower()
 
-            except (json.JSONDecodeError, KeyError, IndexError):
-                pytest.skip("Could not get valid earthquake ID from list command")
-        else:
-            pytest.skip("List command failed, cannot test history command")
+    def test_volcano_alerts_command_integration(self, runner, mock_response):
+        """Test 'gnet volcano alerts' command."""
+        mock_data = mock_loader.get_mock_data("volcano_alerts")
+        assert mock_data is not None
 
-    def test_cli_error_handling_invalid_id(self, runner):
-        """Test CLI error handling with invalid earthquake ID."""
-        result = runner.invoke(app, ["get", "invalid_earthquake_id_12345"])
+        with patch("httpx.AsyncClient.get") as mock_get:
+            mock_get.return_value = mock_response(mock_data)
 
-        # Should fail gracefully
-        assert result.exit_code != 0
-        # Should show some error message
-        assert len(result.stdout.strip()) > 0 or len(result.stderr.strip()) > 0
+            result = runner.invoke(app, ["volcano", "alerts"])
 
-    def test_cli_mmi_filter(self, runner):
-        """Test CLI with MMI filter."""
-        result = runner.invoke(app, ["list", "--mmi", "3", "--limit", "5"])
+            assert result.exit_code == 0
+            assert "Volcano Alert Levels" in result.stdout
 
-        assert result.exit_code == 0
-        # Should handle MMI filter (might return empty results)
-        assert "earthquake" in result.stdout.lower() or "found" in result.stdout.lower()
+    def test_cap_feed_command_integration(self, runner, mock_response):
+        """Test 'gnet quake cap-feed' command."""
+        # CAP feed returns XML
+        mock_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://api.geonet.org.nz/cap/1.2/GPA1.0/feed/atom1.0/quake</id>
+    <title>CAP quakes</title>
+    <updated>2025-09-28T10:30:00Z</updated>
+    <author>
+        <name>GNS Science (GeoNet)</name>
+        <email>info@geonet.org.nz</email>
+    </author>
+    <entry>
+        <id>geonet.org.nz/quake/2025p123456</id>
+        <title>M4.2 earthquake Wellington area</title>
+        <updated>2025-09-28T10:30:00Z</updated>
+        <published>2025-09-28T10:25:00Z</published>
+        <summary>Moderate earthquake near Wellington</summary>
+    </entry>
+</feed>"""
 
-    def test_cli_help_commands(self, runner):
-        """Test that all help commands work."""
-        # Main help
-        result = runner.invoke(app, ["--help"])
-        assert result.exit_code == 0
-        assert "GeoNet Earthquake CLI" in result.stdout
+        mock_resp = AsyncMock(spec=Response)
+        mock_resp.status_code = 200
+        mock_resp.text = mock_xml
 
-        # Command-specific help
-        commands = ["list", "get", "history", "stats", "health"]
-        for cmd in commands:
-            result = runner.invoke(app, [cmd, "--help"])
-            assert result.exit_code == 0, f"Help for {cmd} command failed"
-            assert cmd in result.stdout.lower()
+        with patch("httpx.AsyncClient.get") as mock_get:
+            mock_get.return_value = mock_resp
 
+            result = runner.invoke(app, ["quake", "cap-feed"])
 
-@pytest.mark.integration
-class TestCLIRobustness:
-    """Test CLI robustness and edge cases."""
+            assert result.exit_code == 0
+            assert "CAP Alert Feed" in result.stdout
 
-    @pytest.fixture
-    def runner(self):
-        """CLI test runner."""
-        return CliRunner()
+    def test_error_handling_integration(self, runner, mock_response):
+        """Test CLI error handling with API errors."""
+        # Test 404 error
+        with patch("httpx.AsyncClient.get") as mock_get:
+            mock_get.return_value = mock_response({}, status_code=404)
 
-    def test_cli_with_various_limits(self, runner):
-        """Test CLI with different limit values."""
-        # Small limit
-        result = runner.invoke(app, ["list", "--limit", "1"])
-        assert result.exit_code == 0
+            result = runner.invoke(app, ["quake", "list"])
 
-        # Larger limit
-        result = runner.invoke(app, ["list", "--limit", "20"])
-        assert result.exit_code == 0
-
-        # Zero limit (should be handled gracefully)
-        result = runner.invoke(app, ["list", "--limit", "0"])
-        # This might succeed with empty results or fail gracefully
-        assert result.exit_code in [0, 1]
-
-    def test_cli_magnitude_boundary_values(self, runner):
-        """Test CLI with edge case magnitude values."""
-        # Very high magnitude (unlikely to find results)
-        result = runner.invoke(app, ["list", "--min-magnitude", "9.0", "--limit", "5"])
-        assert result.exit_code == 0
-
-        # Magnitude range
-        result = runner.invoke(
-            app,
-            [
-                "list",
-                "--min-magnitude",
-                "2.0",
-                "--max-magnitude",
-                "5.0",
-                "--limit",
-                "5",
-            ],
-        )
-        assert result.exit_code == 0
-
-    def test_cli_output_formats_consistency(self, runner):
-        """Test that all output formats work for the same data."""
-        formats = ["table", "json", "csv"]
-
-        for fmt in formats:
-            result = runner.invoke(app, ["list", "--format", fmt, "--limit", "2"])
-            assert result.exit_code == 0, f"Format {fmt} failed"
-            assert len(result.stdout.strip()) > 0, f"Format {fmt} produced no output"
-
-    def test_cli_concurrent_usage_simulation(self, runner):
-        """Test CLI commands in sequence to simulate concurrent usage."""
-        # Simulate multiple quick CLI calls
-        commands = [
-            ["health"],
-            ["list", "--limit", "2"],
-            ["stats"],
-            ["list", "--format", "json", "--limit", "1"],
-        ]
-
-        for cmd in commands:
-            result = runner.invoke(app, cmd)
-            # All commands should succeed or fail gracefully
-            assert result.exit_code in [0, 1], f"Command {cmd} had unexpected exit code"
+            assert result.exit_code == 1
+            assert "Error" in result.stdout

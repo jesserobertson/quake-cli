@@ -1,0 +1,150 @@
+{
+  "metadata": {
+    "generated_at": "2025-09-28T22:07:41.868443",
+    "source": "GeoNet API",
+    "mock_type": "intensity_reported",
+    "description": "Reported intensity data from user experiences",
+    "endpoint": "/intensity?type=reported"
+  },
+  "data": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": {
+          "intensity": {
+            "mmi": 3,
+            "count": 1
+          },
+          "location": {
+            "longitude": 172.490844727,
+            "latitude": -43.63494873,
+            "elevation": null,
+            "locality": null
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            172.490844727,
+            -43.63494873
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "intensity": {
+            "mmi": 4,
+            "count": 1
+          },
+          "location": {
+            "longitude": 172.46887207,
+            "latitude": -43.585510254,
+            "elevation": null,
+            "locality": null
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            172.46887207,
+            -43.585510254
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "intensity": {
+            "mmi": 3,
+            "count": 1
+          },
+          "location": {
+            "longitude": 172.46887207,
+            "latitude": -43.55255127,
+            "elevation": null,
+            "locality": null
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            172.46887207,
+            -43.55255127
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "intensity": {
+            "mmi": 3,
+            "count": 1
+          },
+          "location": {
+            "longitude": 172.46887207,
+            "latitude": -43.547058105,
+            "elevation": null,
+            "locality": null
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            172.46887207,
+            -43.547058105
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "intensity": {
+            "mmi": 4,
+            "count": 1
+          },
+          "location": {
+            "longitude": 172.490844727,
+            "latitude": -43.629455566,
+            "elevation": null,
+            "locality": null
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            172.490844727,
+            -43.629455566
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "intensity": {
+            "mmi": 3,
+            "count": 1
+          },
+          "location": {
+            "longitude": 172.523803711,
+            "latitude": -43.585510254,
+            "elevation": null,
+            "locality": null
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            172.523803711,
+            -43.585510254
+          ]
+        }
+      }
+    ],
+    "count_mmi": {
+      "4": 2,
+      "3": 4
+    }
+  }
+}

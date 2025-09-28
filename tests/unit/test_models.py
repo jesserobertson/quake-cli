@@ -5,21 +5,15 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from quake_cli.models import (
-    QuakeFeature,
-    QuakeGeometry,
-    QuakeProperties,
-    QuakeResponse,
-    QuakeStatsResponse,
-)
+from gnet.models import quake
 
 
 class TestQuakeGeometry:
-    """Test QuakeGeometry model."""
+    """Test quake.Geometry model."""
 
     def test_valid_geometry(self):
         """Test creating valid geometry."""
-        geometry = QuakeGeometry(type="Point", coordinates=[174.7633, -36.8485, 5.0])
+        geometry = quake.Geometry(type="Point", coordinates=[174.7633, -36.8485, 5.0])
 
         assert geometry.type == "Point"
         assert geometry.coordinates == [174.7633, -36.8485, 5.0]
@@ -29,7 +23,7 @@ class TestQuakeGeometry:
 
     def test_geometry_properties(self):
         """Test geometry coordinate properties."""
-        geometry = QuakeGeometry(type="Point", coordinates=[175.1234, -37.5678, 12.5])
+        geometry = quake.Geometry(type="Point", coordinates=[175.1234, -37.5678, 12.5])
 
         assert geometry.longitude == 175.1234
         assert geometry.latitude == -37.5678
@@ -39,33 +33,33 @@ class TestQuakeGeometry:
         """Test validation of coordinate length."""
         # Too few coordinates (less than 2)
         with pytest.raises(ValidationError):
-            QuakeGeometry(type="Point", coordinates=[174.7633])
+            quake.Geometry(type="Point", coordinates=[174.7633])
 
         # Too many coordinates (more than 3)
         with pytest.raises(ValidationError):
-            QuakeGeometry(type="Point", coordinates=[174.7633, -36.8485, 5.0, 1.0])
+            quake.Geometry(type="Point", coordinates=[174.7633, -36.8485, 5.0, 1.0])
 
         # Valid coordinates (2 or 3 items should work)
-        geom2 = QuakeGeometry(type="Point", coordinates=[174.7633, -36.8485])
+        geom2 = quake.Geometry(type="Point", coordinates=[174.7633, -36.8485])
         assert geom2.depth is None
 
-        geom3 = QuakeGeometry(type="Point", coordinates=[174.7633, -36.8485, 5.0])
+        geom3 = quake.Geometry(type="Point", coordinates=[174.7633, -36.8485, 5.0])
         assert geom3.depth == 5.0
 
     def test_invalid_geometry_type(self):
         """Test validation of geometry type."""
         with pytest.raises(ValidationError) as exc_info:
-            QuakeGeometry(type="Polygon", coordinates=[174.7633, -36.8485, 5.0])
+            quake.Geometry(type="Polygon", coordinates=[174.7633, -36.8485, 5.0])
 
         assert "Input should be 'Point'" in str(exc_info.value)
 
 
 class TestQuakeProperties:
-    """Test QuakeProperties model."""
+    """Test quake.Properties model."""
 
     def test_valid_properties(self):
         """Test creating valid properties."""
-        properties = QuakeProperties(
+        properties = quake.Properties(
             publicID="2024p123456",
             time=datetime(2024, 1, 15, 10, 30, 0),
             depth=5.5,
@@ -85,7 +79,7 @@ class TestQuakeProperties:
 
     def test_optional_mmi(self):
         """Test that MMI can be None."""
-        properties = QuakeProperties(
+        properties = quake.Properties(
             publicID="2024p123456",
             time=datetime(2024, 1, 15, 10, 30, 0),
             depth=5.5,
@@ -100,7 +94,7 @@ class TestQuakeProperties:
         """Test publicID validation."""
         # Empty string should fail
         with pytest.raises(ValidationError) as exc_info:
-            QuakeProperties(
+            quake.Properties(
                 publicID="",
                 time=datetime(2024, 1, 15, 10, 30, 0),
                 depth=5.5,
@@ -113,7 +107,7 @@ class TestQuakeProperties:
 
         # Whitespace-only should fail
         with pytest.raises(ValidationError) as exc_info:
-            QuakeProperties(
+            quake.Properties(
                 publicID="   ",
                 time=datetime(2024, 1, 15, 10, 30, 0),
                 depth=5.5,
@@ -127,7 +121,7 @@ class TestQuakeProperties:
     def test_validate_locality(self):
         """Test locality validation."""
         with pytest.raises(ValidationError) as exc_info:
-            QuakeProperties(
+            quake.Properties(
                 publicID="2024p123456",
                 time=datetime(2024, 1, 15, 10, 30, 0),
                 depth=5.5,
@@ -141,7 +135,7 @@ class TestQuakeProperties:
     def test_depth_validation(self):
         """Test depth must be non-negative."""
         with pytest.raises(ValidationError) as exc_info:
-            QuakeProperties(
+            quake.Properties(
                 publicID="2024p123456",
                 time=datetime(2024, 1, 15, 10, 30, 0),
                 depth=-1.0,
@@ -156,7 +150,7 @@ class TestQuakeProperties:
         """Test MMI bounds validation."""
         # Too low
         with pytest.raises(ValidationError) as exc_info:
-            QuakeProperties(
+            quake.Properties(
                 publicID="2024p123456",
                 time=datetime(2024, 1, 15, 10, 30, 0),
                 depth=5.5,
@@ -170,7 +164,7 @@ class TestQuakeProperties:
 
         # Too high
         with pytest.raises(ValidationError) as exc_info:
-            QuakeProperties(
+            quake.Properties(
                 publicID="2024p123456",
                 time=datetime(2024, 1, 15, 10, 30, 0),
                 depth=5.5,
@@ -185,7 +179,7 @@ class TestQuakeProperties:
     def test_quality_validation(self):
         """Test quality must be one of the allowed values."""
         with pytest.raises(ValidationError) as exc_info:
-            QuakeProperties(
+            quake.Properties(
                 publicID="2024p123456",
                 time=datetime(2024, 1, 15, 10, 30, 0),
                 depth=5.5,
@@ -198,13 +192,13 @@ class TestQuakeProperties:
 
 
 class TestQuakeFeature:
-    """Test QuakeFeature model."""
+    """Test quake.Feature model."""
 
     def test_valid_feature(self):
         """Test creating a valid feature."""
-        feature = QuakeFeature(
+        feature = quake.Feature(
             type="Feature",
-            properties=QuakeProperties(
+            properties=quake.Properties(
                 publicID="2024p123456",
                 time=datetime(2024, 1, 15, 10, 30, 0),
                 depth=5.5,
@@ -213,7 +207,9 @@ class TestQuakeFeature:
                 mmi=4,
                 quality="best",
             ),
-            geometry=QuakeGeometry(type="Point", coordinates=[174.7633, -36.8485, 5.5]),
+            geometry=quake.Geometry(
+                type="Point", coordinates=[174.7633, -36.8485, 5.5]
+            ),
         )
 
         assert feature.type == "Feature"
@@ -223,9 +219,9 @@ class TestQuakeFeature:
     def test_invalid_feature_type(self):
         """Test feature type validation."""
         with pytest.raises(ValidationError) as exc_info:
-            QuakeFeature(
+            quake.Feature(
                 type="Point",
-                properties=QuakeProperties(
+                properties=quake.Properties(
                     publicID="2024p123456",
                     time=datetime(2024, 1, 15, 10, 30, 0),
                     depth=5.5,
@@ -233,7 +229,7 @@ class TestQuakeFeature:
                     locality="Wellington",
                     quality="best",
                 ),
-                geometry=QuakeGeometry(
+                geometry=quake.Geometry(
                     type="Point", coordinates=[174.7633, -36.8485, 5.5]
                 ),
             )
@@ -242,11 +238,11 @@ class TestQuakeFeature:
 
 
 class TestQuakeResponse:
-    """Test QuakeResponse model."""
+    """Test quake.Response model."""
 
     def test_empty_response(self):
         """Test empty response."""
-        response = QuakeResponse(type="FeatureCollection", features=[])
+        response = quake.Response(type="FeatureCollection", features=[])
 
         assert response.type == "FeatureCollection"
         assert response.features == []
@@ -255,9 +251,9 @@ class TestQuakeResponse:
 
     def test_response_with_features(self):
         """Test response with features."""
-        feature1 = QuakeFeature(
+        feature1 = quake.Feature(
             type="Feature",
-            properties=QuakeProperties(
+            properties=quake.Properties(
                 publicID="2024p123456",
                 time=datetime(2024, 1, 15, 10, 30, 0),
                 depth=5.5,
@@ -265,12 +261,14 @@ class TestQuakeResponse:
                 locality="Wellington",
                 quality="best",
             ),
-            geometry=QuakeGeometry(type="Point", coordinates=[174.7633, -36.8485, 5.5]),
+            geometry=quake.Geometry(
+                type="Point", coordinates=[174.7633, -36.8485, 5.5]
+            ),
         )
 
-        feature2 = QuakeFeature(
+        feature2 = quake.Feature(
             type="Feature",
-            properties=QuakeProperties(
+            properties=quake.Properties(
                 publicID="2024p789012",
                 time=datetime(2024, 1, 16, 14, 45, 0),
                 depth=8.2,
@@ -278,10 +276,12 @@ class TestQuakeResponse:
                 locality="Auckland",
                 quality="preliminary",
             ),
-            geometry=QuakeGeometry(type="Point", coordinates=[174.7645, -36.8500, 8.2]),
+            geometry=quake.Geometry(
+                type="Point", coordinates=[174.7645, -36.8500, 8.2]
+            ),
         )
 
-        response = QuakeResponse(
+        response = quake.Response(
             type="FeatureCollection", features=[feature1, feature2]
         )
 
@@ -290,9 +290,9 @@ class TestQuakeResponse:
 
     def test_get_by_id(self):
         """Test getting feature by publicID."""
-        feature = QuakeFeature(
+        feature = quake.Feature(
             type="Feature",
-            properties=QuakeProperties(
+            properties=quake.Properties(
                 publicID="2024p123456",
                 time=datetime(2024, 1, 15, 10, 30, 0),
                 depth=5.5,
@@ -300,10 +300,12 @@ class TestQuakeResponse:
                 locality="Wellington",
                 quality="best",
             ),
-            geometry=QuakeGeometry(type="Point", coordinates=[174.7633, -36.8485, 5.5]),
+            geometry=quake.Geometry(
+                type="Point", coordinates=[174.7633, -36.8485, 5.5]
+            ),
         )
 
-        response = QuakeResponse(type="FeatureCollection", features=[feature])
+        response = quake.Response(type="FeatureCollection", features=[feature])
 
         found = response.get_by_id("2024p123456")
         assert found is not None
@@ -315,9 +317,9 @@ class TestQuakeResponse:
     def test_filter_by_magnitude(self):
         """Test filtering by magnitude."""
         features = [
-            QuakeFeature(
+            quake.Feature(
                 type="Feature",
-                properties=QuakeProperties(
+                properties=quake.Properties(
                     publicID=f"2024p{i:06d}",
                     time=datetime(2024, 1, 15, 10, 30, 0),
                     depth=5.5,
@@ -325,14 +327,14 @@ class TestQuakeResponse:
                     locality="Wellington",
                     quality="best",
                 ),
-                geometry=QuakeGeometry(
+                geometry=quake.Geometry(
                     type="Point", coordinates=[174.7633, -36.8485, 5.5]
                 ),
             )
             for i, magnitude in enumerate([3.5, 4.2, 5.1, 2.8], 1)
         ]
 
-        response = QuakeResponse(type="FeatureCollection", features=features)
+        response = quake.Response(type="FeatureCollection", features=features)
 
         # Test minimum magnitude filter
         filtered = response.filter_by_magnitude(min_mag=4.0)
@@ -351,9 +353,9 @@ class TestQuakeResponse:
     def test_filter_by_mmi(self):
         """Test filtering by MMI."""
         features = [
-            QuakeFeature(
+            quake.Feature(
                 type="Feature",
-                properties=QuakeProperties(
+                properties=quake.Properties(
                     publicID=f"2024p{i:06d}",
                     time=datetime(2024, 1, 15, 10, 30, 0),
                     depth=5.5,
@@ -362,14 +364,14 @@ class TestQuakeResponse:
                     mmi=mmi,
                     quality="best",
                 ),
-                geometry=QuakeGeometry(
+                geometry=quake.Geometry(
                     type="Point", coordinates=[174.7633, -36.8485, 5.5]
                 ),
             )
             for i, mmi in enumerate([2, 4, 6, None], 1)
         ]
 
-        response = QuakeResponse(type="FeatureCollection", features=features)
+        response = quake.Response(type="FeatureCollection", features=features)
 
         # Test minimum MMI filter (should exclude None values)
         filtered = response.filter_by_mmi(min_mmi=3)
@@ -383,11 +385,11 @@ class TestQuakeResponse:
 
 
 class TestQuakeStatsResponse:
-    """Test QuakeStatsResponse model."""
+    """Test quake.StatsResponse model."""
 
     def test_valid_stats_response(self):
         """Test creating valid stats response."""
-        stats = QuakeStatsResponse(
+        stats = quake.StatsResponse(
             magnitudeCount={
                 "days7": {"0": 6, "1": 147, "2": 144, "3": 37, "4": 4, "5": 1},
                 "days28": {"0": 59, "1": 527, "2": 537, "3": 117, "4": 32, "5": 5},
@@ -416,7 +418,7 @@ class TestQuakeStatsResponse:
 
     def test_optional_magnitude_fields(self):
         """Test that fields can be empty dicts."""
-        stats = QuakeStatsResponse()
+        stats = quake.StatsResponse()
 
         assert stats.magnitudeCount.days7 == {}
         assert stats.magnitudeCount.days28 == {}

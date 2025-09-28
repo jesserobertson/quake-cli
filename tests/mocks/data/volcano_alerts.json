@@ -1,0 +1,326 @@
+{
+  "metadata": {
+    "generated_at": "2025-09-28T22:07:42.119201",
+    "source": "GeoNet API",
+    "mock_type": "volcano_alerts",
+    "description": "Current volcano alert levels",
+    "endpoint": "/volcano/val"
+  },
+  "data": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": {
+          "id": "taupo",
+          "title": "Taupo",
+          "location": {
+            "longitude": 175.896,
+            "latitude": -38.784,
+            "elevation": null,
+            "locality": null
+          },
+          "alert": {
+            "level": 0,
+            "color": "Green",
+            "activity": "No volcanic unrest.",
+            "hazards": "Volcanic environment hazards."
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            175.896,
+            -38.784
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "id": "tongariro",
+          "title": "Tongariro",
+          "location": {
+            "longitude": 175.641727,
+            "latitude": -39.133318,
+            "elevation": null,
+            "locality": null
+          },
+          "alert": {
+            "level": 0,
+            "color": "Green",
+            "activity": "No volcanic unrest.",
+            "hazards": "Volcanic environment hazards."
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            175.641727,
+            -39.133318
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "id": "aucklandvolcanicfield",
+          "title": "Auckland Volcanic Field",
+          "location": {
+            "longitude": 174.77,
+            "latitude": -36.985,
+            "elevation": null,
+            "locality": null
+          },
+          "alert": {
+            "level": 0,
+            "color": "Green",
+            "activity": "No volcanic unrest.",
+            "hazards": "Volcanic environment hazards."
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            174.77,
+            -36.985
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "id": "kermadecislands",
+          "title": "Kermadec Islands",
+          "location": {
+            "longitude": -177.914,
+            "latitude": -29.254,
+            "elevation": null,
+            "locality": null
+          },
+          "alert": {
+            "level": 0,
+            "color": "Green",
+            "activity": "No volcanic unrest.",
+            "hazards": "Volcanic environment hazards."
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -177.914,
+            -29.254
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "id": "mayorisland",
+          "title": "Mayor Island",
+          "location": {
+            "longitude": 176.251,
+            "latitude": -37.286,
+            "elevation": null,
+            "locality": null
+          },
+          "alert": {
+            "level": 0,
+            "color": "Green",
+            "activity": "No volcanic unrest.",
+            "hazards": "Volcanic environment hazards."
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            176.251,
+            -37.286
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "id": "ngauruhoe",
+          "title": "Ngauruhoe",
+          "location": {
+            "longitude": 175.632,
+            "latitude": -39.156,
+            "elevation": null,
+            "locality": null
+          },
+          "alert": {
+            "level": 0,
+            "color": "Green",
+            "activity": "No volcanic unrest.",
+            "hazards": "Volcanic environment hazards."
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            175.632,
+            -39.156
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "id": "northland",
+          "title": "Northland",
+          "location": {
+            "longitude": 173.63,
+            "latitude": -35.395,
+            "elevation": null,
+            "locality": null
+          },
+          "alert": {
+            "level": 0,
+            "color": "Green",
+            "activity": "No volcanic unrest.",
+            "hazards": "Volcanic environment hazards."
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            173.63,
+            -35.395
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "id": "okataina",
+          "title": "Okataina",
+          "location": {
+            "longitude": 176.501,
+            "latitude": -38.119,
+            "elevation": null,
+            "locality": null
+          },
+          "alert": {
+            "level": 0,
+            "color": "Green",
+            "activity": "No volcanic unrest.",
+            "hazards": "Volcanic environment hazards."
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            176.501,
+            -38.119
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "id": "rotorua",
+          "title": "Rotorua",
+          "location": {
+            "longitude": 176.281,
+            "latitude": -38.093,
+            "elevation": null,
+            "locality": null
+          },
+          "alert": {
+            "level": 0,
+            "color": "Green",
+            "activity": "No volcanic unrest.",
+            "hazards": "Volcanic environment hazards."
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            176.281,
+            -38.093
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "id": "taranakiegmont",
+          "title": "Taranaki/Egmont",
+          "location": {
+            "longitude": 174.061,
+            "latitude": -39.298,
+            "elevation": null,
+            "locality": null
+          },
+          "alert": {
+            "level": 0,
+            "color": "Green",
+            "activity": "No volcanic unrest.",
+            "hazards": "Volcanic environment hazards."
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            174.061,
+            -39.298
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "id": "whiteisland",
+          "title": "White Island",
+          "location": {
+            "longitude": 177.183,
+            "latitude": -37.521,
+            "elevation": null,
+            "locality": null
+          },
+          "alert": {
+            "level": 2,
+            "color": "Yellow",
+            "activity": "Moderate to heightened volcanic unrest.",
+            "hazards": "Volcanic unrest hazards, potential for eruption hazards."
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            177.183,
+            -37.521
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "id": "ruapehu",
+          "title": "Ruapehu",
+          "location": {
+            "longitude": 175.563,
+            "latitude": -39.281,
+            "elevation": null,
+            "locality": null
+          },
+          "alert": {
+            "level": 1,
+            "color": "Green",
+            "activity": "Minor volcanic unrest.",
+            "hazards": "Volcanic unrest hazards."
+          }
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            175.563,
+            -39.281
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -111,18 +111,23 @@ class Response(BaseModel):
 
     def get_stations_by_network(self, network: str) -> list[StationFeature]:
         """Filter stations by network."""
-        return [f for f in self.features if f.properties.network.lower() == network.lower()]
+        return [
+            f for f in self.features if f.properties.network.lower() == network.lower()
+        ]
 
     def get_high_intensity_stations(self, min_mmi: float = 4.0) -> list[StationFeature]:
         """Get stations with MMI above threshold."""
         return [
-            f for f in self.features
+            f
+            for f in self.features
             if f.properties.mmi is not None and f.properties.mmi >= min_mmi
         ]
 
     def get_stations_within_distance(self, max_distance: float) -> list[StationFeature]:
         """Get stations within distance of epicenter (km)."""
         return [
-            f for f in self.features
-            if f.properties.distance is not None and f.properties.distance <= max_distance
+            f
+            for f in self.features
+            if f.properties.distance is not None
+            and f.properties.distance <= max_distance
         ]

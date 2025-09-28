@@ -23,7 +23,7 @@ A modern Python library and CLI tool for querying earthquake data from the GeoNe
 ### Development & Distribution
 - 📦 **Lightweight Base Install** - Core dependencies only (5 packages vs 15+)
 - 🛠️ **Optional Dependency Groups** - Separate `dev` and `docs` installs for development
-- 🧪 **Comprehensive Testing** - 90+ tests including integration tests with real API
+- 🧪 **Comprehensive Testing** - 50+ tests including mock-based integration tests for offline testing
 - ✅ **100% Quality Compliance** - Full ruff and mypy compliance with automated checks
 
 ## Quick Start
@@ -135,6 +135,7 @@ M4.1 - 10 km east of Christchurch
 - **[Quick Start Guide](quickstart.md)** - Get up and running in minutes
 - **[API Reference](api/index.md)** - Complete documentation with examples
 - **[Data Models](api/models.md)** - Understanding earthquake data structures
+- **[Testing Documentation](testing.md)** - Mock generation and integration testing workflow
 
 ## GeoNet API
 

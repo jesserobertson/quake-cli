@@ -185,7 +185,9 @@ class GeoNetClient:
         # Make the API request and chain operations
         result = await self._make_request("quake", params)
 
-        def parse_and_limit_response(data: dict[str, Any]) -> Result[quake.Response, str]:
+        def parse_and_limit_response(
+            data: dict[str, Any],
+        ) -> Result[quake.Response, str]:
             try:
                 # Parse GeoJSON response and convert to clean structure
                 features = []
@@ -197,7 +199,9 @@ class GeoNetClient:
                     # Create feature using the clean new structure
                     properties = quake.Properties.from_legacy_api(
                         publicID=props.get("publicID", ""),
-                        time=datetime.fromisoformat(props.get("time", "").replace("Z", "+00:00")),
+                        time=datetime.fromisoformat(
+                            props.get("time", "").replace("Z", "+00:00")
+                        ),
                         magnitude=props.get("magnitude", 0.0),
                         depth=props.get("depth", 0.0),
                         locality=props.get("locality", ""),
@@ -208,8 +212,7 @@ class GeoNetClient:
                     )
 
                     feature = quake.Feature(
-                        properties=properties,
-                        geometry=Point(coordinates=coords)
+                        properties=properties, geometry=Point(coordinates=coords)
                     )
                     features.append(feature)
 
@@ -238,7 +241,9 @@ class GeoNetClient:
         # Trust type system: public_id is typed as str and validated at boundaries
         result = await self._make_request(f"quake/{public_id.strip()}")
 
-        def parse_and_extract_feature(data: dict[str, Any]) -> Result[quake.Feature, str]:
+        def parse_and_extract_feature(
+            data: dict[str, Any],
+        ) -> Result[quake.Feature, str]:
             try:
                 # Parse GeoJSON response and convert to clean structure (same as get_quakes)
                 features = []
@@ -250,7 +255,9 @@ class GeoNetClient:
                     # Create feature using the clean new structure
                     properties = quake.Properties.from_legacy_api(
                         publicID=props.get("publicID", ""),
-                        time=datetime.fromisoformat(props.get("time", "").replace("Z", "+00:00")),
+                        time=datetime.fromisoformat(
+                            props.get("time", "").replace("Z", "+00:00")
+                        ),
                         magnitude=props.get("magnitude", 0.0),
                         depth=props.get("depth", 0.0),
                         locality=props.get("locality", ""),
@@ -261,8 +268,7 @@ class GeoNetClient:
                     )
 
                     feature = quake.Feature(
-                        properties=properties,
-                        geometry=Point(coordinates=coords)
+                        properties=properties, geometry=Point(coordinates=coords)
                     )
                     features.append(feature)
 
@@ -289,7 +295,9 @@ class GeoNetClient:
         # Trust type system: public_id is typed as str and validated at boundaries
         result = await self._make_request(f"quake/history/{public_id.strip()}")
 
-        def normalize_history_data(data: dict[str, Any] | list[Any]) -> Result[list[Any], str]:
+        def normalize_history_data(
+            data: dict[str, Any] | list[Any],
+        ) -> Result[list[Any], str]:
             history = data if isinstance(data, list) else [data]
             return Ok(history)
 
@@ -430,7 +438,9 @@ class GeoNetClient:
 
         result = await self._make_request("intensity", params)
 
-        def parse_intensity_response(data: dict[str, Any]) -> Result[intensity.Response, str]:
+        def parse_intensity_response(
+            data: dict[str, Any],
+        ) -> Result[intensity.Response, str]:
             try:
                 # Parse GeoJSON response and convert to clean structure
                 features = []
@@ -448,14 +458,12 @@ class GeoNetClient:
                     )
 
                     feature = intensity.Feature(
-                        properties=properties,
-                        geometry=Point(coordinates=coords)
+                        properties=properties, geometry=Point(coordinates=coords)
                     )
                     features.append(feature)
 
                 response = intensity.Response(
-                    features=features,
-                    count_mmi=data.get("count_mmi")
+                    features=features, count_mmi=data.get("count_mmi")
                 )
                 return Ok(response)
             except Exception as e:
@@ -477,7 +485,9 @@ class GeoNetClient:
         """
         result = await self._make_request("volcano/val")
 
-        def parse_and_filter_alerts(data: dict[str, Any]) -> Result[volcano.Response, str]:
+        def parse_and_filter_alerts(
+            data: dict[str, Any],
+        ) -> Result[volcano.Response, str]:
             try:
                 # Parse GeoJSON response and convert to clean structure
                 features = []
@@ -499,8 +509,7 @@ class GeoNetClient:
                     )
 
                     feature = volcano.Feature(
-                        properties=properties,
-                        geometry=Point(coordinates=coords)
+                        properties=properties, geometry=Point(coordinates=coords)
                     )
                     features.append(feature)
 
@@ -509,7 +518,8 @@ class GeoNetClient:
                 # Filter by volcano ID if specified
                 if volcano_id:
                     filtered_features = [
-                        f for f in response.features
+                        f
+                        for f in response.features
                         if f.properties.id.upper() == volcano_id.upper()
                     ]
                     response.features = filtered_features
@@ -544,15 +554,18 @@ class GeoNetClient:
         params: dict[str, Any] = {"volcanoID": volcano_id}
         result = await self._make_request("volcano/quake", params)
 
-        def parse_and_filter_volcano_quakes(data: dict[str, Any]) -> Result[volcano.quake.Response, str]:
+        def parse_and_filter_volcano_quakes(
+            data: dict[str, Any],
+        ) -> Result[volcano.quake.Response, str]:
             try:
                 response = volcano.quake.Response.model_validate(data)
 
                 # Apply magnitude filter
                 if min_magnitude is not None:
                     filtered_features = [
-                        f for f in response.features
-                        if f.properties.magnitude >= min_magnitude
+                        f
+                        for f in response.features
+                        if f.properties.magnitude.value >= min_magnitude
                     ]
                     response.features = filtered_features
 
@@ -583,7 +596,9 @@ class GeoNetClient:
                 # CAP feed is XML format, not JSON
                 response = await self.client.get(
                     "cap/1.2/GPA1.0/feed/atom1.0/quake",
-                    headers={"Accept": "application/atom+xml, application/xml, text/xml"}
+                    headers={
+                        "Accept": "application/atom+xml, application/xml, text/xml"
+                    },
                 )
                 return response
             except httpx.TimeoutException as e:
@@ -610,13 +625,13 @@ class GeoNetClient:
                 ns = {"atom": "http://www.w3.org/2005/Atom"}
 
                 # Build feed data structure
-                feed_data = {
+                feed_data: dict[str, Any] = {
                     "feed": {
                         "id": getattr(root.find("atom:id", ns), "text", ""),
                         "title": getattr(root.find("atom:title", ns), "text", ""),
                         "updated": getattr(root.find("atom:updated", ns), "text", ""),
                         "author": {},
-                        "entry": []
+                        "entry": [],
                     }
                 }
 
@@ -640,8 +655,12 @@ class GeoNetClient:
                         "id": getattr(entry.find("atom:id", ns), "text", ""),
                         "title": getattr(entry.find("atom:title", ns), "text", ""),
                         "updated": getattr(entry.find("atom:updated", ns), "text", ""),
-                        "published": getattr(entry.find("atom:published", ns), "text", ""),
-                        "summary": getattr(entry.find("atom:summary", ns), "text", None),
+                        "published": getattr(
+                            entry.find("atom:published", ns), "text", ""
+                        ),
+                        "summary": getattr(
+                            entry.find("atom:summary", ns), "text", None
+                        ),
                     }
 
                     # Parse link
@@ -698,7 +717,7 @@ class GeoNetClient:
                 # CAP alert is XML format
                 response = await self.client.get(
                     f"cap/1.2/GPA1.0/quake/{cap_id.strip()}",
-                    headers={"Accept": "application/xml, text/xml"}
+                    headers={"Accept": "application/xml, text/xml"},
                 )
                 return response
             except httpx.TimeoutException as e:
@@ -728,7 +747,9 @@ class GeoNetClient:
             logger.error(f"Unexpected error in CAP alert request: {e!s}")
             return Err(f"Unexpected error: {e!s}")
 
-    async def get_strong_motion(self, public_id: str) -> Result[strong_motion.Response, str]:
+    async def get_strong_motion(
+        self, public_id: str
+    ) -> Result[strong_motion.Response, str]:
         """
         Get strong motion data for a specific earthquake.
 
@@ -748,7 +769,7 @@ class GeoNetClient:
                 # Strong motion endpoint uses standard JSON format
                 response = await self.client.get(
                     f"intensity/strong/processed/{public_id.strip()}",
-                    headers={"Accept": "application/json"}
+                    headers={"Accept": "application/json"},
                 )
                 return response
             except httpx.TimeoutException as e:
@@ -804,13 +825,12 @@ class GeoNetClient:
                     feature = strong_motion.StationFeature(
                         id=feature_data.get("id", ""),
                         properties=station_props,
-                        geometry=Point(coordinates=coords)
+                        geometry=Point(coordinates=coords),
                     )
                     features.append(feature)
 
                 strong_motion_response = strong_motion.Response(
-                    metadata=metadata,
-                    features=features
+                    metadata=metadata, features=features
                 )
                 return Ok(strong_motion_response)
 

@@ -44,9 +44,7 @@ def get_volcano_quakes(
         gnet volcano quakes --min-magnitude 2.0 --limit 20
         gnet v quakes --format json
     """
-    asyncio.run(
-        async_get_volcano_quakes(volcano_id, limit, min_magnitude, format_type)
-    )
+    asyncio.run(async_get_volcano_quakes(volcano_id, limit, min_magnitude, format_type))
 
 
 async def async_get_volcano_quakes(

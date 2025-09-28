@@ -28,11 +28,19 @@ class CapEntry(BaseModel):
         return cls(
             id=entry_data.get("id", ""),
             title=entry_data.get("title", ""),
-            updated=datetime.fromisoformat(entry_data.get("updated", "").replace("Z", "+00:00")),
-            published=datetime.fromisoformat(entry_data.get("published", "").replace("Z", "+00:00")),
+            updated=datetime.fromisoformat(
+                entry_data.get("updated", "").replace("Z", "+00:00")
+            ),
+            published=datetime.fromisoformat(
+                entry_data.get("published", "").replace("Z", "+00:00")
+            ),
             summary=entry_data.get("summary"),
-            link=entry_data.get("link", {}).get("@href") if entry_data.get("link") else None,
-            author=entry_data.get("author", {}).get("name") if entry_data.get("author") else None,
+            link=entry_data.get("link", {}).get("@href")
+            if entry_data.get("link")
+            else None,
+            author=entry_data.get("author", {}).get("name")
+            if entry_data.get("author")
+            else None,
         )
 
 
@@ -68,7 +76,9 @@ class CapFeed(BaseModel):
         return cls(
             id=feed.get("id", ""),
             title=feed.get("title", ""),
-            updated=datetime.fromisoformat(feed.get("updated", "").replace("Z", "+00:00")),
+            updated=datetime.fromisoformat(
+                feed.get("updated", "").replace("Z", "+00:00")
+            ),
             author_name=author_name,
             author_email=author_email,
             author_uri=author_uri,
@@ -108,9 +118,15 @@ class CapAlert(BaseModel):
             status=alert.get("status", ""),
             msgType=alert.get("msgType", ""),
             scope=alert.get("scope", ""),
-            code=alert.get("code", []) if isinstance(alert.get("code"), list) else [alert.get("code", "")],
+            code=alert.get("code", [])
+            if isinstance(alert.get("code"), list)
+            else [alert.get("code", "")],
             note=alert.get("note"),
             references=alert.get("references"),
             incidents=alert.get("incidents"),
-            info=alert.get("info", []) if isinstance(alert.get("info"), list) else [alert.get("info", {})] if alert.get("info") else [],
+            info=alert.get("info", [])
+            if isinstance(alert.get("info"), list)
+            else [alert.get("info", {})]
+            if alert.get("info")
+            else [],
         )

@@ -1,0 +1,46 @@
+{
+  "generated_at": "2025-09-28T22:07:42.668665",
+  "total_mocks": 7,
+  "mocks": [
+    {
+      "type": "quakes_all",
+      "file": "tests/mocks/data/quakes_all.json",
+      "description": "Recent earthquakes (up to 10)"
+    },
+    {
+      "type": "quakes_mmi4",
+      "file": "tests/mocks/data/quakes_mmi4.json",
+      "description": "Significant earthquakes (MMI\u22654, up to 5)"
+    },
+    {
+      "type": "quake_stats",
+      "file": "tests/mocks/data/quake_stats.json",
+      "description": "Earthquake statistics and counts"
+    },
+    {
+      "type": "intensity_reported",
+      "file": "tests/mocks/data/intensity_reported.json",
+      "description": "Reported intensity data from user experiences"
+    },
+    {
+      "type": "intensity_measured",
+      "file": "tests/mocks/data/intensity_measured.json",
+      "description": "Measured intensity data from instruments"
+    },
+    {
+      "type": "volcano_alerts",
+      "file": "tests/mocks/data/volcano_alerts.json",
+      "description": "Current volcano alert levels"
+    },
+    {
+      "type": "cap_feed",
+      "file": "tests/mocks/data/cap_feed.json",
+      "description": "CAP alert feed for significant earthquakes"
+    }
+  ],
+  "usage": {
+    "description": "Mock data generated from real GeoNet API responses",
+    "usage": "Import these files in integration tests to simulate API responses",
+    "regeneration": "Run 'python scripts/build-mocks.py' to regenerate with fresh data"
+  }
+}

@@ -17,5 +17,7 @@ volcano_app = typer.Typer(
 )
 
 # Register volcano commands
-volcano_app.command("alerts", help="Get current volcanic alert levels")(get_volcano_alerts)
+volcano_app.command("alerts", help="Get current volcanic alert levels")(
+    get_volcano_alerts
+)
 volcano_app.command("quakes", help="Get earthquakes near volcanoes")(get_volcano_quakes)

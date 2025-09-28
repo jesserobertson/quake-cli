@@ -1,0 +1,364 @@
+{
+  "metadata": {
+    "generated_at": "2025-09-28T22:07:41.477387",
+    "source": "GeoNet API",
+    "mock_type": "quakes_all",
+    "description": "Recent earthquakes (up to 10)",
+    "endpoint": "/quake?MMI=-1"
+  },
+  "data": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": {
+          "publicID": "2025p730752",
+          "time": {
+            "origin": "2025-09-28 09:04:52.161000+00:00",
+            "created": null,
+            "updated": null
+          },
+          "magnitude": {
+            "value": 1.553809786967811,
+            "type": null,
+            "uncertainty": null
+          },
+          "location": {
+            "longitude": 178.012832642,
+            "latitude": -38.329566956,
+            "elevation": -18.298614501953125,
+            "locality": "25 km west of Tolaga Bay"
+          },
+          "quality": {
+            "level": "preliminary",
+            "source": null,
+            "confidence": null
+          },
+          "intensity": null
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            178.012832642,
+            -38.329566956
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "publicID": "2025p730739",
+          "time": {
+            "origin": "2025-09-28 08:58:14.414000+00:00",
+            "created": null,
+            "updated": null
+          },
+          "magnitude": {
+            "value": 3.7896110549038586,
+            "type": null,
+            "uncertainty": null
+          },
+          "location": {
+            "longitude": 177.721525891,
+            "latitude": -37.725988928,
+            "elevation": -9.6484375,
+            "locality": "Within 5 km of Te Kaha"
+          },
+          "quality": {
+            "level": "deleted",
+            "source": null,
+            "confidence": null
+          },
+          "intensity": null
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            177.721525891,
+            -37.725988928
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "publicID": "2025p730734",
+          "time": {
+            "origin": "2025-09-28 08:52:58.093000+00:00",
+            "created": null,
+            "updated": null
+          },
+          "magnitude": {
+            "value": 5.602816414160394,
+            "type": null,
+            "uncertainty": null
+          },
+          "location": {
+            "longitude": 179.176315308,
+            "latitude": -24.058916092,
+            "elevation": -514.4963989257812,
+            "locality": "1370 km north of Whangarei"
+          },
+          "quality": {
+            "level": "preliminary",
+            "source": null,
+            "confidence": null
+          },
+          "intensity": null
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            179.176315308,
+            -24.058916092
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "publicID": "2025p730704",
+          "time": {
+            "origin": "2025-09-28 08:39:23.525000+00:00",
+            "created": null,
+            "updated": null
+          },
+          "magnitude": {
+            "value": 1.8892576155388927,
+            "type": null,
+            "uncertainty": null
+          },
+          "location": {
+            "longitude": 172.506072998,
+            "latitude": -43.607643127,
+            "elevation": -4.925417423248291,
+            "locality": "10 km south-west of Christchurch"
+          },
+          "quality": {
+            "level": "best",
+            "source": null,
+            "confidence": null
+          },
+          "intensity": null
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            172.506072998,
+            -43.607643127
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "publicID": "2025p730702",
+          "time": {
+            "origin": "2025-09-28 08:38:16.633000+00:00",
+            "created": null,
+            "updated": null
+          },
+          "magnitude": {
+            "value": 1.9381722430024861,
+            "type": null,
+            "uncertainty": null
+          },
+          "location": {
+            "longitude": 172.857949509,
+            "latitude": -41.447873008,
+            "elevation": -159.328125,
+            "locality": "35 km south of Motueka"
+          },
+          "quality": {
+            "level": "automatic",
+            "source": null,
+            "confidence": null
+          },
+          "intensity": null
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            172.857949509,
+            -41.447873008
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "publicID": "2025p730586",
+          "time": {
+            "origin": "2025-09-28 07:37:44.009000+00:00",
+            "created": null,
+            "updated": null
+          },
+          "magnitude": {
+            "value": 1.200389647171045,
+            "type": null,
+            "uncertainty": null
+          },
+          "location": {
+            "longitude": 176.693756104,
+            "latitude": -40.093505859,
+            "elevation": -19.24808120727539,
+            "locality": "15 km south-east of Waipukurau"
+          },
+          "quality": {
+            "level": "best",
+            "source": null,
+            "confidence": null
+          },
+          "intensity": null
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            176.693756104,
+            -40.093505859
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "publicID": "2025p730510",
+          "time": {
+            "origin": "2025-09-28 06:56:07.010000+00:00",
+            "created": null,
+            "updated": null
+          },
+          "magnitude": {
+            "value": 1.656823058366849,
+            "type": null,
+            "uncertainty": null
+          },
+          "location": {
+            "longitude": 176.201217651,
+            "latitude": -38.563175201,
+            "elevation": -5.0,
+            "locality": "15 km north-east of Taupo"
+          },
+          "quality": {
+            "level": "best",
+            "source": null,
+            "confidence": null
+          },
+          "intensity": null
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            176.201217651,
+            -38.563175201
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "publicID": "2025p730498",
+          "time": {
+            "origin": "2025-09-28 06:49:35.428000+00:00",
+            "created": null,
+            "updated": null
+          },
+          "magnitude": {
+            "value": 1.940071230375081,
+            "type": null,
+            "uncertainty": null
+          },
+          "location": {
+            "longitude": 176.205474854,
+            "latitude": -38.557758331,
+            "elevation": -4.51187801361084,
+            "locality": "15 km north-east of Taupo"
+          },
+          "quality": {
+            "level": "preliminary",
+            "source": null,
+            "confidence": null
+          },
+          "intensity": null
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            176.205474854,
+            -38.557758331
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "publicID": "2025p730490",
+          "time": {
+            "origin": "2025-09-28 06:45:19.699000+00:00",
+            "created": null,
+            "updated": null
+          },
+          "magnitude": {
+            "value": 1.8711668365665035,
+            "type": null,
+            "uncertainty": null
+          },
+          "location": {
+            "longitude": 176.22644043,
+            "latitude": -38.843971252,
+            "elevation": -5.0,
+            "locality": "20 km south-east of Taupo"
+          },
+          "quality": {
+            "level": "best",
+            "source": null,
+            "confidence": null
+          },
+          "intensity": null
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            176.22644043,
+            -38.843971252
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "publicID": "2025p730452",
+          "time": {
+            "origin": "2025-09-28 06:25:12.411000+00:00",
+            "created": null,
+            "updated": null
+          },
+          "magnitude": {
+            "value": 1.922572795438922,
+            "type": null,
+            "uncertainty": null
+          },
+          "location": {
+            "longitude": 176.090255737,
+            "latitude": -38.663204193,
+            "elevation": -5.061174869537354,
+            "locality": "Within 5 km of Taupo"
+          },
+          "quality": {
+            "level": "best",
+            "source": null,
+            "confidence": null
+          },
+          "intensity": null
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            176.090255737,
+            -38.663204193
+          ]
+        }
+      }
+    ]
+  }
+}

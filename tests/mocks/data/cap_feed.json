@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "generated_at": "2025-09-28T22:07:42.269086",
+    "source": "GeoNet API",
+    "mock_type": "cap_feed",
+    "description": "CAP alert feed for significant earthquakes",
+    "endpoint": "/cap/1.2/GPA1.0/feed/atom1.0/quake"
+  },
+  "data": {
+    "id": "https://api.geonet.org.nz/cap/1.2/GPA1.0/feed/atom1.0/quake",
+    "title": "CAP quakes",
+    "updated": "2025-09-28 09:07:31+00:00",
+    "author_name": "GNS Science (GeoNet)",
+    "author_email": "info@geonet.org.nz",
+    "author_uri": "https://geonet.org.nz",
+    "entries": []
+  }
+}

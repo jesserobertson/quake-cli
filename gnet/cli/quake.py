@@ -27,20 +27,34 @@ quake_app = typer.Typer(
 )
 
 # Register core earthquake commands
-quake_app.command("list", help="List recent earthquakes with optional filtering")(list_quakes)
+quake_app.command("list", help="List recent earthquakes with optional filtering")(
+    list_quakes
+)
 quake_app.command("get", help="Get details for a specific earthquake")(get_quake)
-quake_app.command("history", help="Get location history for a specific earthquake")(get_history)
+quake_app.command("history", help="Get location history for a specific earthquake")(
+    get_history
+)
 quake_app.command("stats", help="Get earthquake statistics")(get_stats)
 quake_app.command("health", help="Check GeoNet API health status")(health_check)
 
 # Register intensity commands
-quake_app.command("intensity", help="Get shaking intensity data for earthquakes")(get_intensity)
-quake_app.command("intensity-reported", help="Get reported shaking intensity data")(get_intensity_reported)
-quake_app.command("intensity-measured", help="Get measured shaking intensity data")(get_intensity_measured)
+quake_app.command("intensity", help="Get shaking intensity data for earthquakes")(
+    get_intensity
+)
+quake_app.command("intensity-reported", help="Get reported shaking intensity data")(
+    get_intensity_reported
+)
+quake_app.command("intensity-measured", help="Get measured shaking intensity data")(
+    get_intensity_measured
+)
 
 # Register CAP (Common Alerting Protocol) commands
-quake_app.command("cap-feed", help="Get CAP feed of recent significant earthquakes")(cap_feed)
+quake_app.command("cap-feed", help="Get CAP feed of recent significant earthquakes")(
+    cap_feed
+)
 quake_app.command("cap-alert", help="Get individual CAP alert document")(cap_alert)
 
 # Register strong motion commands
-quake_app.command("strong-motion", help="Get strong motion/accelerometer data for an earthquake")(get_strong_motion)
+quake_app.command(
+    "strong-motion", help="Get strong motion/accelerometer data for an earthquake"
+)(get_strong_motion)

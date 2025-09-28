@@ -3,9 +3,9 @@
 import pytest
 from typer.testing import CliRunner
 
-from quake_cli.cli import app
-from quake_cli.cli.output import create_quakes_table, format_datetime, output_data
-from quake_cli.models import QuakeFeature, QuakeGeometry, QuakeProperties
+from gnet.cli.main import app
+from gnet.cli.output import create_quakes_table, format_datetime, output_data
+from gnet.models import quake
 
 
 class TestCLIBasics:
@@ -45,9 +45,9 @@ class TestCLIHelpers:
 
     def test_create_quakes_table(self):
         """Test table creation."""
-        feature = QuakeFeature(
+        feature = quake.Feature(
             type="Feature",
-            properties=QuakeProperties(
+            properties=quake.Properties(
                 publicID="2024p123456",
                 time="2024-01-15T10:30:00.000Z",
                 depth=5.5,
@@ -56,7 +56,7 @@ class TestCLIHelpers:
                 mmi=4,
                 quality="best",
             ),
-            geometry=QuakeGeometry(
+            geometry=quake.Geometry(
                 type="Point",
                 coordinates=[174.7633, -36.8485, 5.5],
             ),

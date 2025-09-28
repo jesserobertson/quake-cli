@@ -97,7 +97,9 @@ async def cap_feed(
             if feed.author_uri:
                 metadata_table.add_row("Website", feed.author_uri)
 
-            metadata_table.add_row("Last Updated", feed.updated.strftime("%Y-%m-%d %H:%M:%S UTC"))
+            metadata_table.add_row(
+                "Last Updated", feed.updated.strftime("%Y-%m-%d %H:%M:%S UTC")
+            )
             metadata_table.add_row("Total Entries", str(feed.count))
 
             console.print(metadata_table)
