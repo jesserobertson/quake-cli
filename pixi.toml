@@ -40,6 +40,7 @@ mkdocstrings-python = "*"
 
 [pypi-dependencies]
 sh = ">=2.0.0,<3"
+logerr = { git = "https://github.com/jesserobertson/logerr.git" }
 
 [environments]
 default = ["dev", "docs"]

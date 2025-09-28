@@ -14,10 +14,13 @@ from pathlib import Path
 from typing import Any, Callable
 
 import typer
+from loguru import logger
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
+
+from logerr import Result
 
 from quake_cli.client import GeoNetClient, GeoNetError
 import quake_cli.models
@@ -31,6 +34,36 @@ app = typer.Typer(
 )
 console = Console()
 
+# Global verbose flag
+_verbose_logging = False
+
+
+def configure_logging(verbose: bool) -> None:
+    """Configure logging levels based on verbose flag."""
+    global _verbose_logging
+    _verbose_logging = verbose
+
+    if verbose:
+        # Enable detailed logging with timestamps and levels
+        logger.remove()  # Remove default handler
+        logger.add(
+            console.file,
+            format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+            level="DEBUG"
+        )
+        console.print("[dim]Verbose logging enabled[/dim]")
+    else:
+        # Remove all handlers to suppress logerr automatic logging
+        logger.remove()
+        # Add a minimal handler that only shows critical errors to stderr
+        import sys
+        logger.add(
+            sys.stderr,
+            format="<red>{message}</red>",
+            level="CRITICAL",
+            filter=lambda record: record["level"].name == "CRITICAL"
+        )
+
 # Output format options
 OutputFormat = typer.Option(
     "table",
@@ -40,6 +73,21 @@ OutputFormat = typer.Option(
     case_sensitive=False,
     show_choices=True,
 )
+
+
+def handle_result(result: Result) -> Any:
+    """Handle Result types and convert errors to CLI exits."""
+    if result.is_ok():
+        return result.unwrap()
+    else:
+        error_msg = result.unwrap_err()
+        if _verbose_logging:
+            # In verbose mode, the error is already logged by logerr
+            console.print(f"[red]Error:[/red] {error_msg}")
+        else:
+            # In non-verbose mode, show a clean error message
+            console.print(f"[red]Error:[/red] {error_msg}")
+        raise typer.Exit(1)
 
 
 def handle_errors(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -103,17 +151,16 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
     """Output data in the specified format."""
     match format_type.lower():
         case "json":
-            # Handle JSON output using match statements
-            match data:
-                case data if isinstance(data, QuakeResponse):
-                    json_data = data.model_dump()
-                case data if isinstance(data, (list, tuple)):
-                    json_data: Any = [
-                        item.model_dump() if hasattr(item, "model_dump") else item
-                        for item in data
-                    ]
-                case _:
-                    json_data = data.model_dump() if hasattr(data, "model_dump") else data
+            # Handle JSON output
+            if hasattr(data, "model_dump"):
+                json_data = data.model_dump()
+            elif isinstance(data, list):
+                json_data: Any = [
+                    item.model_dump() if hasattr(item, "model_dump") else item
+                    for item in data
+                ]
+            else:
+                json_data = data
 
             json_str = json.dumps(json_data, indent=2, default=str)
 
@@ -124,17 +171,16 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
                 console.print(json_str)
 
         case "csv":
-            # Handle CSV output using match statements
-            match data:
-                case data if isinstance(data, QuakeResponse):
-                    features = data.features
-                case data if isinstance(data, QuakeFeature):
-                    features = [data]
-                case data if isinstance(data, (list, tuple)) and data:
-                    features = data
-                case _:
-                    console.print("[red]CSV format only supported for earthquake data[/red]")
-                    return
+            # Handle CSV output
+            if hasattr(data, "features"):
+                features = data.features
+            elif hasattr(data, "properties"):
+                features = [data]
+            elif isinstance(data, list) and data:
+                features = data
+            else:
+                console.print("[red]CSV format only supported for earthquake data[/red]")
+                return
 
             if output_file:
                 with open(output_file, "w", newline="") as csvfile:
@@ -251,8 +297,12 @@ def list(
     ),
     format: str = OutputFormat,
     output: Path = typer.Option(None, "--output", "-o", help="Output file path"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
 ) -> None:
     """List recent earthquakes with optional filtering."""
+
+    # Configure logging for this command
+    configure_logging(verbose)
 
     async def async_list() -> None:
         with Progress(
@@ -265,16 +315,18 @@ def list(
             async with GeoNetClient() as client:
                 if mmi is not None:
                     # Use server-side MMI filtering
-                    response = await client.get_quakes(mmi=mmi, limit=limit)
+                    result = await client.get_quakes(mmi=mmi, limit=limit)
+                    response = handle_result(result)
                 else:
                     # Use client-side filtering
-                    response = await client.search_quakes(
+                    result = await client.search_quakes(
                         min_magnitude=min_magnitude,
                         max_magnitude=max_magnitude,
                         min_mmi=min_mmi,
                         max_mmi=max_mmi,
                         limit=limit,
                     )
+                    response = handle_result(result)
 
             progress.update(
                 task, completed=True, description=f"Found {response.count} earthquakes"
@@ -300,8 +352,12 @@ def get(
     earthquake_id: str = typer.Argument(..., help="Earthquake public ID"),
     format: str = OutputFormat,
     output: Path = typer.Option(None, "--output", "-o", help="Output file path"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
 ) -> None:
     """Get details for a specific earthquake."""
+
+    # Configure logging for this command
+    configure_logging(verbose)
 
     async def async_get() -> None:
         with Progress(
@@ -314,7 +370,8 @@ def get(
             )
 
             async with GeoNetClient() as client:
-                feature = await client.get_quake(earthquake_id)
+                result = await client.get_quake(earthquake_id)
+                feature = handle_result(result)
 
             progress.update(task, completed=True, description="Earthquake retrieved")
 
@@ -347,8 +404,12 @@ def history(
     earthquake_id: str = typer.Argument(..., help="Earthquake public ID"),
     format: str = OutputFormat,
     output: Path = typer.Option(None, "--output", "-o", help="Output file path"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
 ) -> None:
     """Get location history for a specific earthquake."""
+
+    # Configure logging for this command
+    configure_logging(verbose)
 
     async def async_history() -> None:
         with Progress(
@@ -361,7 +422,8 @@ def history(
             )
 
             async with GeoNetClient() as client:
-                history_data = await client.get_quake_history(earthquake_id)
+                result = await client.get_quake_history(earthquake_id)
+                history_data = handle_result(result)
 
             progress.update(task, completed=True, description="History retrieved")
 
@@ -380,8 +442,12 @@ def history(
 def stats(
     format: str = OutputFormat,
     output: Path = typer.Option(None, "--output", "-o", help="Output file path"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
 ) -> None:
     """Get earthquake statistics."""
+
+    # Configure logging for this command
+    configure_logging(verbose)
 
     async def async_stats() -> None:
         with Progress(
@@ -392,7 +458,8 @@ def stats(
             task = progress.add_task("Fetching earthquake statistics...", total=None)
 
             async with GeoNetClient() as client:
-                stats_data = await client.get_quake_stats()
+                result = await client.get_quake_stats()
+                stats_data = handle_result(result)
 
             progress.update(task, completed=True, description="Statistics retrieved")
 
@@ -403,8 +470,13 @@ def stats(
 
 @app.command()
 @handle_errors
-def health() -> None:
+def health(
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
+) -> None:
     """Check GeoNet API health status."""
+
+    # Configure logging for this command
+    configure_logging(verbose)
 
     async def async_health() -> None:
         with Progress(
@@ -415,7 +487,8 @@ def health() -> None:
             task = progress.add_task("Checking API health...", total=None)
 
             async with GeoNetClient() as client:
-                is_healthy = await client.health_check()
+                result = await client.health_check()
+                is_healthy = handle_result(result)
 
             progress.update(task, completed=True)
 
@@ -446,11 +519,8 @@ def main(
         print(f"quake-cli version {__version__}")
         raise typer.Exit(0)
 
-    if verbose:
-        # Enable verbose logging for httpx and other libraries if needed
-        import logging
-
-        logging.basicConfig(level=logging.INFO)
+    # Configure logging based on verbose flag
+    configure_logging(verbose)
 
 
 if __name__ == "__main__":

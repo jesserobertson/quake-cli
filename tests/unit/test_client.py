@@ -8,7 +8,6 @@ from quake_cli.client import (
     GeoNetError,
     GeoNetConnectionError,
     GeoNetTimeoutError,
-    GeoNetAPIError,
 )
 
 
