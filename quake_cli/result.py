@@ -28,6 +28,14 @@ def handle_api_error(error: Exception) -> Result[T, str]:
 
     Returns:
         An err Result with error message
+
+    Examples:
+        >>> error = ValueError("Invalid input")
+        >>> result = handle_api_error(error)
+        >>> result.is_err()
+        True
+        >>> result.unwrap_err()
+        'Invalid input'
     """
     error_msg = str(error)
     logger.error(f"API error occurred: {error_msg}")

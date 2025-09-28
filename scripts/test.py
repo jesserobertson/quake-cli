@@ -43,7 +43,7 @@ def unit(
     panel = Panel.fit("🧪 Running Unit Tests", style="blue")
     console.print(panel)
 
-    cmd = ["pytest", "tests/unit/"]
+    cmd = ["pytest", "tests/unit/", "--doctest-modules", "quake_cli/"]
 
     if verbose:
         cmd.append("-v")
@@ -111,7 +111,7 @@ def all(
     panel = Panel.fit("🚀 Running All Tests", style="blue")
     console.print(panel)
 
-    cmd = ["pytest", "tests/", "--doctest-glob='*.md'", "docs/content/", "--run-integration"]
+    cmd = ["pytest", "tests/", "--doctest-modules", "quake_cli/", "--doctest-glob='*.md'", "docs/content/", "--run-integration"]
 
     if verbose:
         cmd.append("-v")

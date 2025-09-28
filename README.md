@@ -18,7 +18,8 @@ A modern Python CLI for querying earthquake data from the GeoNet API
 - 🔍 **Flexible Filtering** - Filter earthquakes by magnitude, MMI, and other criteria
 - 🚀 **Modern Python 3.12+** with comprehensive type hints
 - 📦 **Unified Development Experience** with pixi task management
-- 🧪 **Comprehensive Testing** with pytest
+- 🧪 **Comprehensive Testing** with pytest and automated doctests
+- 📖 **Live Documentation Examples** - All code examples are automatically tested
 - 🔍 **Code Quality Enforcement** with ruff and mypy (100% compliance)
 - 📚 **Beautiful Documentation** with MkDocs Material
 - 🔒 **Security Scanning** and dependency management
@@ -55,17 +56,22 @@ quake health
 
 ```python
 import asyncio
-from quake_cli import GeoNetClient
+from quake_cli.client import GeoNetClient
+from logerr import Ok, Err
 
 async def main():
     async with GeoNetClient() as client:
-        # Get recent earthquakes
-        response = await client.get_quakes(limit=10)
-        print(f"Found {response.count} earthquakes")
+        # Get recent earthquakes with Result-based error handling
+        result = await client.get_quakes(limit=10)
 
-        # Get specific earthquake
-        quake = await client.get_quake("2024p123456")
-        print(f"Magnitude: {quake.properties.magnitude}")
+        match result:
+            case Ok(response):
+                print(f"Found {response.count} earthquakes")
+                for quake in response.features[:3]:  # Show first 3
+                    props = quake.properties
+                    print(f"  {props.publicID}: M{props.magnitude} at {props.locality}")
+            case Err(error):
+                print(f"Error: {error}")
 
 asyncio.run(main())
 ```
@@ -209,7 +215,8 @@ quake --version
 
 ```bash
 # Testing
-pixi run test unit                 # Run unit tests
+pixi run test unit                 # Run unit tests (includes doctests)
+pixi run test all                  # Run all tests (unit + integration + doctests)
 
 # Code Quality
 pixi run quality check             # Run all quality checks
@@ -272,7 +279,27 @@ This project maintains **100% ruff compliance** and comprehensive type coverage:
 - **[Full Documentation](https://jesserobertson.github.io/quake-cli)** - Comprehensive guides and API reference
 - **[Installation Guide](docs/content/installation.md)** - Detailed installation instructions
 - **[Quick Start](docs/content/quickstart.md)** - Get up and running quickly
-- **[API Reference](docs/content/api/)** - Complete API documentation
+- **[Live Examples](docs/content/examples.md)** - Automatically tested code examples
+- **[API Reference](docs/content/api/)** - Complete API documentation with docstring examples
+
+### Tested Documentation Examples
+
+All code examples in our documentation are automatically tested as part of the test suite:
+
+```bash
+# Test all docstring examples
+pixi run python -m pytest --doctest-modules quake_cli/ -v
+
+# Test specific modules
+pixi run python -m doctest quake_cli/models.py -v
+pixi run python -m doctest quake_cli/cli.py -v
+```
+
+This ensures that:
+- ✅ Examples remain functional as the code evolves
+- ✅ Documentation stays synchronized with the codebase
+- ✅ Users can trust that examples will work as shown
+- ✅ Breaking changes to public APIs are caught immediately
 
 ### Building Documentation Locally
 
@@ -301,6 +328,7 @@ This tool queries earthquake data from [GeoNet](https://www.geonet.org.nz/), New
 ## Support
 
 - **Documentation**: https://jesserobertson.github.io/quake-cli
+- **API Examples**: https://jesserobertson.github.io/quake-cli/examples/
 - **Issues**: https://github.com/jesserobertson/quake-cli/issues
 - **Discussions**: https://github.com/jesserobertson/quake-cli/discussions
 - **GeoNet API**: https://www.geonet.org.nz/data/supplementary/webapi

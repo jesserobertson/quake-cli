@@ -117,7 +117,24 @@ def handle_errors(func: Callable[..., Any]) -> Callable[..., Any]:
 
 
 def format_datetime(dt: datetime) -> str:
-    """Format datetime for display."""
+    """Format datetime for display.
+
+    Args:
+        dt: The datetime object to format
+
+    Returns:
+        Formatted datetime string in YYYY-MM-DD HH:MM:SS format
+
+    Examples:
+        >>> from datetime import datetime
+        >>> dt = datetime(2023, 12, 25, 14, 30, 45)
+        >>> format_datetime(dt)
+        '2023-12-25 14:30:45'
+
+        >>> dt2 = datetime(2024, 1, 1, 0, 0, 0)
+        >>> format_datetime(dt2)
+        '2024-01-01 00:00:00'
+    """
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
