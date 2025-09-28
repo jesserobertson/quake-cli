@@ -80,18 +80,12 @@ nav:
     - Installation: installation.md
     - Quick Start: quickstart.md
     - Examples: examples.md
-  - User Guide:
-    - Core Concepts: concepts.md
-    - Synchronous API: sync-api.md
-    - Asynchronous API: async-api.md
   - API Reference:
     - Overview: api/index.md
-    - Core Module: api/core.md
-    - Async Module: api/async.md
-  - Developer Documentation:
-    - Contributing: developer/contributing.md
-    - Testing: developer/testing.md
-    - Development Setup: developer/setup.md
+    - Data Models: api/models.md
+    - HTTP Client: api/client.md
+    - CLI Utilities: api/cli.md
+    - Result Types: api/result.md
 
 extra:
   social:
