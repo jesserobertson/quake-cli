@@ -54,7 +54,9 @@ pip install quake_cli[docs]
 pip install quake_cli[dev,docs]
 ```
 
-### CLI Usage
+## CLI Usage
+
+### Basic Commands
 
 ```bash
 # List recent earthquakes
@@ -73,10 +75,80 @@ quake list --format json --output earthquakes.json
 quake health
 
 # Get earthquake statistics
-quake stats --format json
+quake stats
 ```
 
-### Library Usage
+### Working with jq
+
+The CLI outputs valid JSON by default for stats and when using `--format json`, making it perfect for use with `jq`:
+
+```bash
+# Get earthquake count by magnitude for the last 7 days
+quake stats | jq '.magnitudeCount.days7'
+
+# Find total earthquakes in the last 365 days
+quake stats | jq '.magnitudeCount.days365 | map(.) | add'
+
+# Get the largest earthquake magnitude from recent data
+quake list --format json --limit 100 | jq '.features[].properties.magnitude | max'
+
+# Count earthquakes above magnitude 4.0
+quake list --format json --min-magnitude 4.0 | jq '.features | length'
+
+# Extract earthquake locations and magnitudes
+quake list --format json --limit 10 | jq '.features[] | {magnitude: .properties.magnitude, location: .properties.locality}'
+
+# Get coordinates of recent large earthquakes
+quake list --format json --min-magnitude 5.0 | jq '.features[] | {magnitude: .properties.magnitude, lat: .geometry.coordinates[1], lon: .geometry.coordinates[0]}'
+
+# Daily earthquake rates for the last week
+quake stats | jq '.rate.perDay | to_entries | sort_by(.key) | reverse | .[0:7] | map({date: .key, count: .value})'
+```
+
+### Advanced CLI Examples
+
+```bash
+# Export large earthquakes to CSV for analysis
+quake list --min-magnitude 5.0 --format csv --output large_quakes.csv
+
+# Monitor recent earthquake activity (JSON format for processing)
+quake list --limit 5 --format json | jq '.features[] | "\(.properties.time): M\(.properties.magnitude) at \(.properties.locality)"'
+
+# Get detailed earthquake information with coordinates
+quake list --format json --limit 1 | jq '.features[0] | {id: .properties.publicID, magnitude: .properties.magnitude, depth: .properties.depth, location: .properties.locality, coordinates: .geometry.coordinates}'
+
+# Check API health with verbose output
+quake health --verbose
+```
+
+### CLI Commands Reference
+
+```bash
+# List earthquakes with options
+quake list [--limit N] [--min-magnitude M] [--max-magnitude M]
+          [--min-mmi I] [--max-mmi I] [--mmi I]
+          [--format table|json|csv] [--output FILE] [--verbose]
+
+# Get specific earthquake
+quake get EARTHQUAKE_ID [--format table|json|csv] [--output FILE] [--verbose]
+
+# Get earthquake history
+quake history EARTHQUAKE_ID [--format table|json|csv] [--output FILE] [--verbose]
+
+# Get earthquake statistics
+quake stats [--format table|json|csv] [--output FILE] [--verbose]
+
+# Check API health
+quake health [--verbose]
+
+# Show help
+quake --help
+quake COMMAND --help
+```
+
+## Python Library Usage
+
+### Basic Library Usage
 
 ```python
 import asyncio
@@ -232,31 +304,6 @@ pip install quake_cli[all]
 git clone https://github.com/jesserobertson/quake-cli.git
 cd quake-cli
 pixi install
-```
-
-### CLI Commands Reference
-
-```bash
-# List earthquakes with options
-quake list [--limit N] [--min-magnitude M] [--max-magnitude M]
-          [--min-mmi I] [--max-mmi I] [--mmi I]
-          [--format table|json|csv] [--output FILE] [--verbose]
-
-# Get specific earthquake
-quake get EARTHQUAKE_ID [--format table|json|csv] [--output FILE] [--verbose]
-
-# Get earthquake history
-quake history EARTHQUAKE_ID [--format table|json|csv] [--output FILE] [--verbose]
-
-# Get earthquake statistics
-quake stats [--format table|json|csv] [--output FILE] [--verbose]
-
-# Check API health
-quake health [--verbose]
-
-# Show help
-quake --help
-quake COMMAND --help
 ```
 
 ## Contributing
