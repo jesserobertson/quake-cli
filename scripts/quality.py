@@ -25,7 +25,7 @@ console = Console()
 
 # Configuration
 PROJECT_ROOT = Path(__file__).parent.parent
-PACKAGE_PATH = PROJECT_ROOT / "quake_cli"
+PACKAGE_PATH = PROJECT_ROOT / "gnet"
 TESTS_PATH = PROJECT_ROOT / "tests"
 
 
@@ -40,7 +40,7 @@ def check() -> None:
     # Type checking
     with Status("Running mypy type checking...", console=console, spinner="dots"):
         try:
-            run_command(["mypy", "quake_cli"])
+            run_command(["mypy", "gnet"])
             results["typecheck"] = "✅ Pass"
         except typer.Exit:
             results["typecheck"] = "❌ Fail"
@@ -48,7 +48,7 @@ def check() -> None:
     # Linting
     with Status("Running ruff linting...", console=console, spinner="dots"):
         try:
-            run_command(["ruff", "check", "quake_cli", "tests"])
+            run_command(["ruff", "check", "gnet", "tests"])
             results["lint"] = "✅ Pass"
         except typer.Exit:
             results["lint"] = "❌ Fail"
@@ -56,7 +56,7 @@ def check() -> None:
     # Format checking
     with Status("Checking code formatting...", console=console, spinner="dots"):
         try:
-            run_command(["ruff", "format", "--check", "quake_cli", "tests"])
+            run_command(["ruff", "format", "--check", "gnet", "tests"])
             results["format"] = "✅ Pass"
         except typer.Exit:
             results["format"] = "❌ Fail"
@@ -84,7 +84,7 @@ def check() -> None:
 def typecheck() -> None:
     """Run mypy type checking."""
     console.print("🔍 Running mypy type checking...")
-    run_command(["mypy", "quake_cli"])
+    run_command(["mypy", "gnet"])
     console.print("[green]✅ Type checking passed![/green]")
 
 
@@ -92,7 +92,7 @@ def typecheck() -> None:
 def lint() -> None:
     """Run ruff linting (check only)."""
     console.print("🔍 Running ruff linting...")
-    run_command(["ruff", "check", "quake_cli", "tests"])
+    run_command(["ruff", "check", "gnet", "tests"])
     console.print("[green]✅ Linting passed![/green]")
 
 
@@ -101,11 +101,11 @@ def format(check_only: bool = typer.Option(False, "--check", help="Check formatt
     """Format code with ruff (or check formatting)."""
     if check_only:
         console.print("🔍 Checking code formatting...")
-        run_command(["ruff", "format", "--check", "quake_cli", "tests"])
+        run_command(["ruff", "format", "--check", "gnet", "tests"])
         console.print("[green]✅ Code formatting is correct![/green]")
     else:
         console.print("🎨 Formatting code with ruff...")
-        run_command(["ruff", "format", "quake_cli", "tests"])
+        run_command(["ruff", "format", "gnet", "tests"])
         console.print("[green]✅ Code formatted![/green]")
 
 
@@ -116,11 +116,11 @@ def fix() -> None:
     
     # Format code
     with Status("Formatting code...", console=console, spinner="dots"):
-        run_command(["ruff", "format", "quake_cli", "tests"])
+        run_command(["ruff", "format", "gnet", "tests"])
     
     # Fix linting issues
     with Status("Fixing linting issues...", console=console, spinner="dots"):
-        run_command(["ruff", "check", "--fix", "quake_cli", "tests"])
+        run_command(["ruff", "check", "--fix", "gnet", "tests"])
     
     console.print("[green]✅ Auto-fix completed![/green]")
     console.print("[yellow]💡 Run 'pixi run quality check' to verify all issues are resolved[/yellow]")

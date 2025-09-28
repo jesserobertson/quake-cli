@@ -3,11 +3,11 @@
 import pytest
 from typer.testing import CliRunner
 from unittest.mock import AsyncMock, patch, MagicMock
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
 from gnet.cli.main import app
-from gnet.models import quake, volcano, intensity
+from gnet.models import cap, quake, volcano, intensity
 from gnet.models.common import Point, Location, Magnitude, TimeInfo, Quality, Intensity
 from gnet.models.volcano import Alert
 from logerr import Ok, Err
@@ -432,3 +432,113 @@ class TestAliases:
         result = runner.invoke(app, ["v", "alerts"])
         assert result.exit_code == 0
         mock_client.get_volcano_alerts.assert_called_once()
+
+
+class TestCAPCommands:
+    """Test CAP (Common Alerting Protocol) commands."""
+
+    @pytest.fixture
+    def runner(self):
+        """Test runner fixture."""
+        return CliRunner()
+
+    @pytest.fixture
+    def mock_cap_feed_response(self):
+        """Mock CAP feed response data."""
+        entry = cap.CapEntry(
+            id="geonet.org.nz/quake/2025p123456",
+            title="M4.2 earthquake Wellington area",
+            updated=datetime(2025, 9, 28, 10, 30, 0, tzinfo=timezone.utc),
+            published=datetime(2025, 9, 28, 10, 25, 0, tzinfo=timezone.utc),
+            summary="Moderate earthquake near Wellington",
+            link="https://api.geonet.org.nz/cap/1.2/GPA1.0/quake/2025p123456",
+            author="GNS Science (GeoNet)",
+        )
+
+        return cap.CapFeed(
+            id="https://api.geonet.org.nz/cap/1.2/GPA1.0/feed/atom1.0/quake",
+            title="CAP quakes",
+            updated=datetime(2025, 9, 28, 10, 30, 0, tzinfo=timezone.utc),
+            author_name="GNS Science (GeoNet)",
+            author_email="info@geonet.org.nz",
+            author_uri="https://geonet.org.nz",
+            entries=[entry],
+        )
+
+    @patch('gnet.cli.commands.cap.GeoNetClient')
+    def test_cap_feed_command(self, mock_client_class, runner, mock_cap_feed_response):
+        """Test CAP feed command."""
+        mock_client = AsyncMock()
+        mock_client.get_cap_feed.return_value = Ok(mock_cap_feed_response)
+        mock_client_class.return_value.__aenter__.return_value = mock_client
+
+        result = runner.invoke(app, ["quake", "cap-feed"])
+        assert result.exit_code == 0
+        assert "CAP Feed: CAP quakes" in result.stdout
+        assert "GNS Science (GeoNet)" in result.stdout
+        mock_client.get_cap_feed.assert_called_once()
+
+    @patch('gnet.cli.commands.cap.GeoNetClient')
+    def test_cap_feed_json_format(self, mock_client_class, runner, mock_cap_feed_response):
+        """Test CAP feed command with JSON output."""
+        mock_client = AsyncMock()
+        mock_client.get_cap_feed.return_value = Ok(mock_cap_feed_response)
+        mock_client_class.return_value.__aenter__.return_value = mock_client
+
+        result = runner.invoke(app, ["quake", "cap-feed", "--format", "json"])
+        assert result.exit_code == 0
+
+        # Should be valid JSON
+        try:
+            json.loads(result.stdout)
+        except json.JSONDecodeError:
+            pytest.fail("Output is not valid JSON")
+
+        mock_client.get_cap_feed.assert_called_once()
+
+    @patch('gnet.cli.commands.cap.GeoNetClient')
+    def test_cap_alert_command(self, mock_client_class, runner):
+        """Test CAP alert command."""
+        mock_xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+            <identifier>2025p123456</identifier>
+            <sender>info@geonet.org.nz</sender>
+            <sent>2025-09-28T10:30:00Z</sent>
+            <status>Actual</status>
+            <msgType>Alert</msgType>
+            <scope>Public</scope>
+        </alert>"""
+
+        mock_client = AsyncMock()
+        mock_client.get_cap_alert.return_value = Ok(mock_xml)
+        mock_client_class.return_value.__aenter__.return_value = mock_client
+
+        result = runner.invoke(app, ["quake", "cap-alert", "2025p123456"])
+        assert result.exit_code == 0
+        assert "CAP Alert Document for 2025p123456" in result.stdout
+        assert "<?xml version" in result.stdout
+        mock_client.get_cap_alert.assert_called_once_with("2025p123456")
+
+    @patch('gnet.cli.commands.cap.GeoNetClient')
+    def test_cap_feed_error_handling(self, mock_client_class, runner):
+        """Test CAP feed error handling."""
+        mock_client = AsyncMock()
+        mock_client.get_cap_feed.return_value = Err("CAP feed unavailable")
+        mock_client_class.return_value.__aenter__.return_value = mock_client
+
+        result = runner.invoke(app, ["quake", "cap-feed"])
+        assert result.exit_code == 1
+        assert "Error" in result.stdout
+        assert "CAP feed unavailable" in result.stdout
+
+    @patch('gnet.cli.commands.cap.GeoNetClient')
+    def test_cap_alert_error_handling(self, mock_client_class, runner):
+        """Test CAP alert error handling."""
+        mock_client = AsyncMock()
+        mock_client.get_cap_alert.return_value = Err("CAP alert not found")
+        mock_client_class.return_value.__aenter__.return_value = mock_client
+
+        result = runner.invoke(app, ["quake", "cap-alert", "invalid_id"])
+        assert result.exit_code == 1
+        assert "Error" in result.stdout
+        assert "CAP alert not found" in result.stdout

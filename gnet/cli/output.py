@@ -14,7 +14,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from gnet.models import intensity, quake, volcano
+from gnet.models import cap, intensity, quake, strong_motion, volcano
 
 # Initialize Rich console
 console = Console()
@@ -190,21 +190,25 @@ def output_data(data: Any, format_type: str, output_file: Path | None = None) ->
                 console.print(output.getvalue())
 
         case "table":
-            # Handle table output using match statements
+            # Handle table output using direct type matching
             match data:
-                case data if isinstance(data, quake.Response):
+                case quake.Response():
                     table = create_quakes_table(data.features)
                     console.print(table)
-                case data if isinstance(data, quake.Feature):
+                case quake.Feature():
                     table = create_quakes_table([data], "Earthquake Details")
                     console.print(table)
-                case data if isinstance(data, (list, tuple)) and data:
-                    # Ensure data is a list of quake.Feature objects
-                    if all(isinstance(item, quake.Feature) for item in data):
-                        table = create_quakes_table(list(data))
-                        console.print(table)
-                    else:
-                        console.print(data)
+                case cap.CapFeed():
+                    # CAP feeds are handled directly in the cap command
+                    return
+                case strong_motion.Response():
+                    # Strong motion data is handled directly in the strong motion command
+                    return
+                case list() | tuple() if data and all(isinstance(item, quake.Feature) for item in data):
+                    table = create_quakes_table(list(data))
+                    console.print(table)
+                case list() | tuple() if data:
+                    console.print(data)
                 case _:
                     # For other data types (like stats), output as JSON for readability
                     json_str = json.dumps(data, indent=2, default=str)

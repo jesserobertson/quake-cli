@@ -27,7 +27,7 @@ from . import common, intensity, quake, volcano
 # Export the module namespaces
 __all__ = [
     "common",
+    "intensity",
     "quake",
     "volcano",
-    "intensity",
 ]

@@ -51,10 +51,9 @@ def main(
     configure_logging(verbose)
 
     # If no subcommand provided, show help
-    if ctx.invoked_subcommand is None:
-        if not version:
-            print(ctx.get_help())
-            ctx.exit()
+    if ctx.invoked_subcommand is None and not version:
+        print(ctx.get_help())
+        ctx.exit()
 
 
 if __name__ == "__main__":

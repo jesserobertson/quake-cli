@@ -5,7 +5,6 @@ This module contains all earthquake-related data models organized in a clean hie
 """
 
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel
 

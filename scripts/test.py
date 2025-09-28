@@ -43,7 +43,7 @@ def unit(
     panel = Panel.fit("🧪 Running Unit Tests", style="blue")
     console.print(panel)
 
-    cmd = ["pytest", "tests/unit/", "--doctest-modules", "quake_cli/"]
+    cmd = ["pytest", "tests/unit/", "--doctest-modules", "gnet/"]
 
     if verbose:
         cmd.append("-v")
@@ -52,7 +52,7 @@ def unit(
     if coverage:
         cmd.extend(
             [
-                "--cov=quake_cli",
+                "--cov=gnet",
                 "--cov-report=term",
                 "--cov-report=xml",
                 "--cov-report=html",
@@ -111,14 +111,14 @@ def all(
     panel = Panel.fit("🚀 Running All Tests", style="blue")
     console.print(panel)
 
-    cmd = ["pytest", "tests/", "--doctest-modules", "quake_cli/", "--doctest-glob='*.md'", "docs/content/", "--run-integration"]
+    cmd = ["pytest", "tests/", "--doctest-modules", "gnet/", "--doctest-glob='*.md'", "docs/content/", "--run-integration"]
 
     if verbose:
         cmd.append("-v")
     if coverage:
         cmd.extend(
             [
-                "--cov=quake_cli",
+                "--cov=gnet",
                 "--cov-report=term",
                 "--cov-report=xml",
                 "--cov-report=html",

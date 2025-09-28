@@ -19,7 +19,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from gnet.models import intensity, quake, volcano
+from gnet.models import cap, intensity, quake, strong_motion, volcano
 from gnet.models.common import Point
 
 # Simplified type aliases for commonly used Result patterns
@@ -197,7 +197,7 @@ class GeoNetClient:
                     # Create feature using the clean new structure
                     properties = quake.Properties.from_legacy_api(
                         publicID=props.get("publicID", ""),
-                        time=datetime.fromisoformat(props.get("time", "").replace('Z', '+00:00')),
+                        time=datetime.fromisoformat(props.get("time", "").replace("Z", "+00:00")),
                         magnitude=props.get("magnitude", 0.0),
                         depth=props.get("depth", 0.0),
                         locality=props.get("locality", ""),
@@ -250,7 +250,7 @@ class GeoNetClient:
                     # Create feature using the clean new structure
                     properties = quake.Properties.from_legacy_api(
                         publicID=props.get("publicID", ""),
-                        time=datetime.fromisoformat(props.get("time", "").replace('Z', '+00:00')),
+                        time=datetime.fromisoformat(props.get("time", "").replace("Z", "+00:00")),
                         magnitude=props.get("magnitude", 0.0),
                         depth=props.get("depth", 0.0),
                         locality=props.get("locality", ""),
@@ -565,6 +565,267 @@ class GeoNetClient:
                 return Err(f"Failed to parse volcano quakes response: {e!s}")
 
         return result.then(parse_and_filter_volcano_quakes)
+
+    async def get_cap_feed(self) -> Result[cap.CapFeed, str]:
+        """
+        Get CAP (Common Alerting Protocol) feed of recent significant earthquakes.
+
+        Returns:
+            Result containing cap.CapFeed or error message
+        """
+        if not self.client:
+            return Err("Client not initialized. Use async context manager.")
+
+        @self._create_retry_decorator()  # type: ignore[misc]
+        async def _request() -> httpx.Response:
+            try:
+                assert self.client is not None  # For mypy
+                # CAP feed is XML format, not JSON
+                response = await self.client.get(
+                    "cap/1.2/GPA1.0/feed/atom1.0/quake",
+                    headers={"Accept": "application/atom+xml, application/xml, text/xml"}
+                )
+                return response
+            except httpx.TimeoutException as e:
+                raise GeoNetTimeoutError(f"Request timed out: {e}") from e
+            except httpx.ConnectError as e:
+                raise GeoNetConnectionError(f"Connection failed: {e}") from e
+
+        try:
+            response = await _request()
+
+            # Check HTTP status
+            if response.status_code >= 400:
+                error_msg = f"API returned {response.status_code}: {response.text}"
+                logger.error(error_msg)
+                return Err(error_msg)
+
+            # Parse XML response
+            try:
+                import xml.etree.ElementTree as ET
+
+                root = ET.fromstring(response.text)
+
+                # Extract namespace
+                ns = {"atom": "http://www.w3.org/2005/Atom"}
+
+                # Build feed data structure
+                feed_data = {
+                    "feed": {
+                        "id": getattr(root.find("atom:id", ns), "text", ""),
+                        "title": getattr(root.find("atom:title", ns), "text", ""),
+                        "updated": getattr(root.find("atom:updated", ns), "text", ""),
+                        "author": {},
+                        "entry": []
+                    }
+                }
+
+                # Parse author
+                author_elem = root.find("atom:author", ns)
+                if author_elem is not None:
+                    author_name = author_elem.find("atom:name", ns)
+                    author_email = author_elem.find("atom:email", ns)
+                    author_uri = author_elem.find("atom:uri", ns)
+
+                    feed_data["feed"]["author"] = {
+                        "name": getattr(author_name, "text", None),
+                        "email": getattr(author_email, "text", None),
+                        "uri": getattr(author_uri, "text", None),
+                    }
+
+                # Parse entries
+                entries = root.findall("atom:entry", ns)
+                for entry in entries:
+                    entry_data = {
+                        "id": getattr(entry.find("atom:id", ns), "text", ""),
+                        "title": getattr(entry.find("atom:title", ns), "text", ""),
+                        "updated": getattr(entry.find("atom:updated", ns), "text", ""),
+                        "published": getattr(entry.find("atom:published", ns), "text", ""),
+                        "summary": getattr(entry.find("atom:summary", ns), "text", None),
+                    }
+
+                    # Parse link
+                    link_elem = entry.find("atom:link", ns)
+                    if link_elem is not None:
+                        entry_data["link"] = {"@href": link_elem.get("href")}
+
+                    # Parse author
+                    entry_author = entry.find("atom:author", ns)
+                    if entry_author is not None:
+                        entry_author_name = entry_author.find("atom:name", ns)
+                        if entry_author_name is not None:
+                            entry_data["author"] = {"name": entry_author_name.text}
+
+                    feed_data["feed"]["entry"].append(entry_data)
+
+                cap_feed = cap.CapFeed.from_atom_feed(feed_data)
+                return Ok(cap_feed)
+
+            except Exception as e:
+                return Err(f"Failed to parse CAP feed XML: {e!s}")
+
+        except GeoNetTimeoutError as e:
+            logger.error(f"Request timeout: {e!s}")
+            return Err(f"Request timed out: {e!s}")
+        except GeoNetConnectionError as e:
+            logger.error(f"Connection error: {e!s}")
+            return Err(f"Connection failed: {e!s}")
+        except Exception as e:
+            logger.error(f"Unexpected error in CAP feed request: {e!s}")
+            return Err(f"Unexpected error: {e!s}")
+
+    async def get_cap_alert(self, cap_id: str) -> Result[str, str]:
+        """
+        Get individual CAP alert document for a specific earthquake.
+
+        Args:
+            cap_id: CAP alert identifier
+
+        Returns:
+            Result containing raw CAP XML content or error message
+
+        Note:
+            Returns raw XML as the CAP format is complex and primarily consumed by
+            automated systems. Use get_cap_feed() for parsed feed entries.
+        """
+        if not self.client:
+            return Err("Client not initialized. Use async context manager.")
+
+        @self._create_retry_decorator()  # type: ignore[misc]
+        async def _request() -> httpx.Response:
+            try:
+                assert self.client is not None  # For mypy
+                # CAP alert is XML format
+                response = await self.client.get(
+                    f"cap/1.2/GPA1.0/quake/{cap_id.strip()}",
+                    headers={"Accept": "application/xml, text/xml"}
+                )
+                return response
+            except httpx.TimeoutException as e:
+                raise GeoNetTimeoutError(f"Request timed out: {e}") from e
+            except httpx.ConnectError as e:
+                raise GeoNetConnectionError(f"Connection failed: {e}") from e
+
+        try:
+            response = await _request()
+
+            # Check HTTP status
+            if response.status_code >= 400:
+                error_msg = f"API returned {response.status_code}: {response.text}"
+                logger.error(error_msg)
+                return Err(error_msg)
+
+            # Return raw XML for CAP documents
+            return Ok(response.text)
+
+        except GeoNetTimeoutError as e:
+            logger.error(f"Request timeout: {e!s}")
+            return Err(f"Request timed out: {e!s}")
+        except GeoNetConnectionError as e:
+            logger.error(f"Connection error: {e!s}")
+            return Err(f"Connection failed: {e!s}")
+        except Exception as e:
+            logger.error(f"Unexpected error in CAP alert request: {e!s}")
+            return Err(f"Unexpected error: {e!s}")
+
+    async def get_strong_motion(self, public_id: str) -> Result[strong_motion.Response, str]:
+        """
+        Get strong motion data for a specific earthquake.
+
+        Args:
+            public_id: Earthquake public ID
+
+        Returns:
+            Result containing strong_motion.Response or error message
+        """
+        if not self.client:
+            return Err("Client not initialized. Use async context manager.")
+
+        @self._create_retry_decorator()  # type: ignore[misc]
+        async def _request() -> httpx.Response:
+            try:
+                assert self.client is not None  # For mypy
+                # Strong motion endpoint uses standard JSON format
+                response = await self.client.get(
+                    f"intensity/strong/processed/{public_id.strip()}",
+                    headers={"Accept": "application/json"}
+                )
+                return response
+            except httpx.TimeoutException as e:
+                raise GeoNetTimeoutError(f"Request timed out: {e}") from e
+            except httpx.ConnectError as e:
+                raise GeoNetConnectionError(f"Connection failed: {e}") from e
+
+        try:
+            response = await _request()
+
+            # Check HTTP status
+            if response.status_code >= 400:
+                error_msg = f"API returned {response.status_code}: {response.text}"
+                logger.error(error_msg)
+                return Err(error_msg)
+
+            # Parse JSON response
+            try:
+                data = response.json()
+
+                # Extract metadata
+                metadata_data = data.get("metadata", {})
+                metadata = strong_motion.Metadata.from_legacy_api(
+                    author=metadata_data.get("author"),
+                    depth=metadata_data.get("depth"),
+                    description=metadata_data.get("description"),
+                    latitude=metadata_data.get("latitude"),
+                    longitude=metadata_data.get("longitude"),
+                    magnitude=metadata_data.get("magnitude"),
+                    version=metadata_data.get("version"),
+                )
+
+                # Parse station features
+                features = []
+                for feature_data in data.get("features", []):
+                    props = feature_data.get("properties", {})
+                    geom = feature_data.get("geometry", {})
+                    coords = geom.get("coordinates", [0, 0])
+
+                    # Create station properties
+                    station_props = strong_motion.StationProperties.from_legacy_api(
+                        station=props.get("station", ""),
+                        network=props.get("network", ""),
+                        location=props.get("location", ""),
+                        distance=props.get("distance"),
+                        mmi=props.get("mmi"),
+                        pga_horizontal=props.get("pga_horizontal"),
+                        pga_vertical=props.get("pga_vertical"),
+                        pgv_horizontal=props.get("pgv_horizontal"),
+                        pgv_vertical=props.get("pgv_vertical"),
+                    )
+
+                    feature = strong_motion.StationFeature(
+                        id=feature_data.get("id", ""),
+                        properties=station_props,
+                        geometry=Point(coordinates=coords)
+                    )
+                    features.append(feature)
+
+                strong_motion_response = strong_motion.Response(
+                    metadata=metadata,
+                    features=features
+                )
+                return Ok(strong_motion_response)
+
+            except Exception as e:
+                return Err(f"Failed to parse strong motion response: {e!s}")
+
+        except GeoNetTimeoutError as e:
+            logger.error(f"Request timeout: {e!s}")
+            return Err(f"Request timed out: {e!s}")
+        except GeoNetConnectionError as e:
+            logger.error(f"Connection error: {e!s}")
+            return Err(f"Connection failed: {e!s}")
+        except Exception as e:
+            logger.error(f"Unexpected error in strong motion request: {e!s}")
+            return Err(f"Unexpected error: {e!s}")
 
 
 # Export public API
