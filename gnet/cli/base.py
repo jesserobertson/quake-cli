@@ -14,7 +14,7 @@ from logerr import Err, Ok, Result
 from loguru import logger
 from rich.console import Console
 
-from quake_cli.client import GeoNetError
+from gnet.client import GeoNetError
 
 # Initialize Rich console
 console = Console()

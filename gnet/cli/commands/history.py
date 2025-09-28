@@ -9,7 +9,7 @@ from pathlib import Path
 import typer
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from quake_cli.cli.base import (
+from gnet.cli.base import (
     async_command,
     configure_logging,
     console,
@@ -17,8 +17,8 @@ from quake_cli.cli.base import (
     handle_errors,
     handle_result,
 )
-from quake_cli.cli.output import OutputFormat, output_data
-from quake_cli.client import GeoNetClient
+from gnet.cli.output import OutputFormat, output_data
+from gnet.client import GeoNetClient
 
 
 @async_command

@@ -6,6 +6,7 @@ including retry logic with tenacity and comprehensive error handling.
 """
 
 import os
+from datetime import datetime
 from typing import Any
 
 import httpx
@@ -18,14 +19,11 @@ from tenacity import (
     wait_exponential,
 )
 
-from quake_cli.models import QuakeFeature, QuakeResponse
+from gnet.models import intensity, quake, volcano
+from gnet.models.common import Point
 
-# Type aliases for Result types
-type QuakeResult = Result[QuakeResponse, str]
-type FeatureResult = Result[QuakeFeature, str]
+# Simplified type aliases for commonly used Result patterns
 type DataResult = Result[dict[str, Any], str]
-type StatsResult = Result[dict[str, Any], str]
-type HistoryResult = Result[list[Any], str]
 
 
 class GeoNetError(Exception):
@@ -162,7 +160,7 @@ class GeoNetClient:
         self,
         mmi: int | None = None,
         limit: int | None = None,
-    ) -> QuakeResult:
+    ) -> Result[quake.Response, str]:
         """
         Get earthquake data from GeoNet API.
 
@@ -171,7 +169,7 @@ class GeoNetClient:
             limit: Maximum number of results (applied client-side)
 
         Returns:
-            Result containing QuakeResponse or error message
+            Result containing quake.Response or error message
         """
         params: dict[str, Any] = {}
 
@@ -187,9 +185,36 @@ class GeoNetClient:
         # Make the API request and chain operations
         result = await self._make_request("quake", params)
 
-        def parse_and_limit_response(data: dict[str, Any]) -> QuakeResult:
+        def parse_and_limit_response(data: dict[str, Any]) -> Result[quake.Response, str]:
             try:
-                response = QuakeResponse.model_validate(data)
+                # Parse GeoJSON response and convert to clean structure
+                features = []
+                for feature_data in data.get("features", []):
+                    props = feature_data.get("properties", {})
+                    geom = feature_data.get("geometry", {})
+                    coords = geom.get("coordinates", [0, 0])
+
+                    # Create feature using the clean new structure
+                    properties = quake.Properties.from_legacy_api(
+                        publicID=props.get("publicID", ""),
+                        time=datetime.fromisoformat(props.get("time", "").replace('Z', '+00:00')),
+                        magnitude=props.get("magnitude", 0.0),
+                        depth=props.get("depth", 0.0),
+                        locality=props.get("locality", ""),
+                        MMI=props.get("MMI"),
+                        quality=props.get("quality", "unknown"),
+                        longitude=coords[0],
+                        latitude=coords[1],
+                    )
+
+                    feature = quake.Feature(
+                        properties=properties,
+                        geometry=Point(coordinates=coords)
+                    )
+                    features.append(feature)
+
+                response = quake.Response(features=features)
+
                 # Apply client-side limit if specified
                 if limit is not None and limit > 0:
                     response.features = response.features[:limit]
@@ -199,7 +224,7 @@ class GeoNetClient:
 
         return result.then(parse_and_limit_response)
 
-    async def get_quake(self, public_id: str) -> FeatureResult:
+    async def get_quake(self, public_id: str) -> Result[quake.Feature, str]:
         """
         Get a specific earthquake by its publicID.
 
@@ -207,26 +232,50 @@ class GeoNetClient:
             public_id: Unique earthquake identifier
 
         Returns:
-            Result containing QuakeFeature or error message
+            Result containing quake.Feature or error message
         """
         # Make the API request and chain operations
         # Trust type system: public_id is typed as str and validated at boundaries
         result = await self._make_request(f"quake/{public_id.strip()}")
 
-        def parse_and_extract_feature(data: dict[str, Any]) -> FeatureResult:
+        def parse_and_extract_feature(data: dict[str, Any]) -> Result[quake.Feature, str]:
             try:
-                response = QuakeResponse.model_validate(data)
-                match response.is_empty:
-                    case True:
-                        return Err(f"Earthquake {public_id} not found")
-                    case False:
-                        return Ok(response.features[0])
+                # Parse GeoJSON response and convert to clean structure (same as get_quakes)
+                features = []
+                for feature_data in data.get("features", []):
+                    props = feature_data.get("properties", {})
+                    geom = feature_data.get("geometry", {})
+                    coords = geom.get("coordinates", [0, 0])
+
+                    # Create feature using the clean new structure
+                    properties = quake.Properties.from_legacy_api(
+                        publicID=props.get("publicID", ""),
+                        time=datetime.fromisoformat(props.get("time", "").replace('Z', '+00:00')),
+                        magnitude=props.get("magnitude", 0.0),
+                        depth=props.get("depth", 0.0),
+                        locality=props.get("locality", ""),
+                        MMI=props.get("MMI"),
+                        quality=props.get("quality", "unknown"),
+                        longitude=coords[0],
+                        latitude=coords[1],
+                    )
+
+                    feature = quake.Feature(
+                        properties=properties,
+                        geometry=Point(coordinates=coords)
+                    )
+                    features.append(feature)
+
+                if not features:
+                    return Err(f"Earthquake {public_id} not found")
+
+                return Ok(features[0])
             except Exception as e:
                 return Err(f"Failed to parse response: {e!s}")
 
         return result.then(parse_and_extract_feature)
 
-    async def get_quake_history(self, public_id: str) -> HistoryResult:
+    async def get_quake_history(self, public_id: str) -> Result[list[Any], str]:
         """
         Get location history for a specific earthquake.
 
@@ -240,13 +289,13 @@ class GeoNetClient:
         # Trust type system: public_id is typed as str and validated at boundaries
         result = await self._make_request(f"quake/history/{public_id.strip()}")
 
-        def normalize_history_data(data: dict[str, Any] | list[Any]) -> HistoryResult:
+        def normalize_history_data(data: dict[str, Any] | list[Any]) -> Result[list[Any], str]:
             history = data if isinstance(data, list) else [data]
             return Ok(history)
 
         return result.then(normalize_history_data)
 
-    async def get_quake_stats(self) -> StatsResult:
+    async def get_quake_stats(self) -> Result[dict[str, Any], str]:
         """
         Get earthquake statistics.
 
@@ -300,7 +349,7 @@ class GeoNetClient:
         min_mmi: int | None = None,
         max_mmi: int | None = None,
         limit: int | None = None,
-    ) -> QuakeResult:
+    ) -> Result[quake.Response, str]:
         """
         Search earthquakes with filtering options.
 
@@ -315,12 +364,12 @@ class GeoNetClient:
             limit: Maximum number of results
 
         Returns:
-            Result containing filtered QuakeResponse or error message
+            Result containing filtered quake.Response or error message
         """
         # Get all quakes first and apply filters
         result = await self.get_quakes()
 
-        def apply_filters(response: QuakeResponse) -> QuakeResult:
+        def apply_filters(response: quake.Response) -> Result[quake.Response, str]:
             # Apply magnitude filters
             if min_magnitude is not None or max_magnitude is not None:
                 response.features = response.filter_by_magnitude(
@@ -354,16 +403,175 @@ class GeoNetClient:
             lambda error: f"Health check failed: {error}"
         )
 
+    async def get_intensity(
+        self,
+        intensity_type: str,
+        publicid: str | None = None,
+        aggregation: str | None = None,
+    ) -> Result[intensity.Response, str]:
+        """
+        Get earthquake intensity data.
+
+        Args:
+            intensity_type: Type of intensity data ('reported' or 'measured')
+            publicid: Optional earthquake public ID
+            aggregation: Optional aggregation method for reported data ('max' or 'median')
+
+        Returns:
+            Result containing intensity.Response or error message
+        """
+        params: dict[str, Any] = {"type": intensity_type}
+
+        if publicid:
+            params["publicID"] = publicid.strip()
+
+        if aggregation and intensity_type == "reported":
+            params["aggregation"] = aggregation
+
+        result = await self._make_request("intensity", params)
+
+        def parse_intensity_response(data: dict[str, Any]) -> Result[intensity.Response, str]:
+            try:
+                # Parse GeoJSON response and convert to clean structure
+                features = []
+                for feature_data in data.get("features", []):
+                    props = feature_data.get("properties", {})
+                    geom = feature_data.get("geometry", {})
+                    coords = geom.get("coordinates", [0, 0])
+
+                    # Create feature using the clean new structure
+                    properties = intensity.Properties.from_legacy(
+                        mmi=props.get("mmi", 0),
+                        count=props.get("count"),
+                        longitude=coords[0],
+                        latitude=coords[1],
+                    )
+
+                    feature = intensity.Feature(
+                        properties=properties,
+                        geometry=Point(coordinates=coords)
+                    )
+                    features.append(feature)
+
+                response = intensity.Response(
+                    features=features,
+                    count_mmi=data.get("count_mmi")
+                )
+                return Ok(response)
+            except Exception as e:
+                return Err(f"Failed to parse intensity response: {e!s}")
+
+        return result.then(parse_intensity_response)
+
+    async def get_volcano_alerts(
+        self, volcano_id: str | None = None
+    ) -> Result[volcano.Response, str]:
+        """
+        Get volcanic alert levels.
+
+        Args:
+            volcano_id: Optional specific volcano ID to filter by
+
+        Returns:
+            Result containing volcano.Response or error message
+        """
+        result = await self._make_request("volcano/val")
+
+        def parse_and_filter_alerts(data: dict[str, Any]) -> Result[volcano.Response, str]:
+            try:
+                # Parse GeoJSON response and convert to clean structure
+                features = []
+                for feature_data in data.get("features", []):
+                    props = feature_data.get("properties", {})
+                    geom = feature_data.get("geometry", {})
+                    coords = geom.get("coordinates", [0, 0])
+
+                    # Create feature using the clean new structure
+                    properties = volcano.Properties.from_legacy_api(
+                        volcanoID=props.get("volcanoID", ""),
+                        volcanoTitle=props.get("volcanoTitle", ""),
+                        level=props.get("level", 0),
+                        acc=props.get("acc", ""),
+                        activity=props.get("activity", ""),
+                        hazards=props.get("hazards", ""),
+                        longitude=coords[0],
+                        latitude=coords[1],
+                    )
+
+                    feature = volcano.Feature(
+                        properties=properties,
+                        geometry=Point(coordinates=coords)
+                    )
+                    features.append(feature)
+
+                response = volcano.Response(features=features)
+
+                # Filter by volcano ID if specified
+                if volcano_id:
+                    filtered_features = [
+                        f for f in response.features
+                        if f.properties.id.upper() == volcano_id.upper()
+                    ]
+                    response.features = filtered_features
+
+                return Ok(response)
+            except Exception as e:
+                return Err(f"Failed to parse volcano alerts response: {e!s}")
+
+        return result.then(parse_and_filter_alerts)
+
+    async def get_volcano_quakes(
+        self,
+        volcano_id: str | None = None,
+        limit: int | None = None,
+        min_magnitude: float | None = None,
+    ) -> Result[volcano.quake.Response, str]:
+        """
+        Get earthquakes near volcanoes.
+
+        Args:
+            volcano_id: Optional specific volcano ID to filter by
+            limit: Maximum number of results
+            min_magnitude: Minimum magnitude threshold
+
+        Returns:
+            Result containing volcano.quake.Response or error message
+        """
+        # The volcano/quake endpoint requires a volcanoID parameter
+        if not volcano_id:
+            return Ok(volcano.quake.Response(features=[]))
+
+        params: dict[str, Any] = {"volcanoID": volcano_id}
+        result = await self._make_request("volcano/quake", params)
+
+        def parse_and_filter_volcano_quakes(data: dict[str, Any]) -> Result[volcano.quake.Response, str]:
+            try:
+                response = volcano.quake.Response.model_validate(data)
+
+                # Apply magnitude filter
+                if min_magnitude is not None:
+                    filtered_features = [
+                        f for f in response.features
+                        if f.properties.magnitude >= min_magnitude
+                    ]
+                    response.features = filtered_features
+
+                # Apply limit
+                if limit is not None and limit > 0:
+                    response.features = response.features[:limit]
+
+                return Ok(response)
+            except Exception as e:
+                return Err(f"Failed to parse volcano quakes response: {e!s}")
+
+        return result.then(parse_and_filter_volcano_quakes)
+
 
 # Export public API
 __all__ = [
     "DataResult",
-    "FeatureResult",
     "GeoNetClient",
     "GeoNetConnectionError",
     "GeoNetError",
     "GeoNetTimeoutError",
-    "HistoryResult",
-    "QuakeResult",
-    "StatsResult",
 ]

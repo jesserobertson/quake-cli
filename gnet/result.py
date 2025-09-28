@@ -10,7 +10,7 @@ from typing import TypeVar
 from logerr import Err, Result
 from loguru import logger
 
-from quake_cli.models import QuakeFeature, QuakeResponse
+from gnet.models import QuakeFeature, QuakeResponse
 
 # Type aliases for common Result types
 T = TypeVar("T")

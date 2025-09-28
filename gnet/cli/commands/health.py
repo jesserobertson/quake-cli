@@ -8,14 +8,14 @@ import typer
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from quake_cli.cli.base import (
+from gnet.cli.base import (
     async_command,
     configure_logging,
     console,
     handle_errors,
     handle_result,
 )
-from quake_cli.client import GeoNetClient
+from gnet.client import GeoNetClient
 
 
 @async_command

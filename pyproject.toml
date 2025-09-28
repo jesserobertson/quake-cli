@@ -3,15 +3,18 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "quake_cli"
+name = "gnet"
 version = "0.1.0"
-description = "Pull data from GeoNet API"
+description = "Comprehensive GeoNet API client for earthquakes, volcanoes, and geohazard monitoring"
 authors = [{name = "Jess Robertson", email = "jess.robertson@niwa.co.nz"}]
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
 keywords = [
     "earthquakes",
+    "volcanoes",
+    "geohazards",
+    "geonet",
     "cli",
     "python",
 ]
@@ -56,20 +59,20 @@ docs = [
     "mkdocstrings",
     "mkdocstrings-python",
 ]
-all = ["quake_cli[dev,docs]"]
+all = ["gnet[dev,docs]"]
 
 [project.scripts]
-quake = "quake_cli.cli:app"
+gnet = "gnet.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/jesserobertson/quake-cli"
-Documentation = "https://jesserobertson.github.io/quake-cli/"
-Repository = "https://github.com/jesserobertson/quake-cli"
-Issues = "https://github.com/jesserobertson/quake-cli/issues"
+Homepage = "https://github.com/jesserobertson/gnet"
+Documentation = "https://jesserobertson.github.io/gnet/"
+Repository = "https://github.com/jesserobertson/gnet"
+Issues = "https://github.com/jesserobertson/gnet/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["quake_cli*"]
+include = ["gnet*"]
 
 [tool.ruff]
 line-length = 88
@@ -107,7 +110,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.ruff.lint.isort]
-known-first-party = ["quake_cli"]
+known-first-party = ["gnet"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -148,7 +151,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["quake_cli"]
+source = ["gnet"]
 branch = true
 omit = [
     "*/tests/*", 
@@ -182,7 +185,7 @@ skip_empty = false
 
 [tool.coverage.html]
 directory = "htmlcov"
-title = "quake-cli Coverage Report"
+title = "gnet Coverage Report"
 
 [tool.coverage.xml]
 output = "coverage.xml"

@@ -10,7 +10,7 @@ import typer
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from quake_cli.cli.base import (
+from gnet.cli.base import (
     async_command,
     configure_logging,
     console,
@@ -18,8 +18,8 @@ from quake_cli.cli.base import (
     handle_errors,
     handle_result,
 )
-from quake_cli.cli.output import OutputFormat, output_data
-from quake_cli.client import GeoNetClient
+from gnet.cli.output import OutputFormat, output_data
+from gnet.client import GeoNetClient
 
 
 @async_command
@@ -68,7 +68,8 @@ async def get_quake(
 
         details_table.add_row("Longitude", f"{geom.longitude:.4f}°")
         details_table.add_row("Latitude", f"{geom.latitude:.4f}°")
-        if geom.depth is not None:
-            details_table.add_row("Depth (geometry)", f"{geom.depth:.1f} km")
+        if feature.properties.location.elevation is not None:
+            depth = abs(feature.properties.location.elevation)
+            details_table.add_row("Depth", f"{depth:.1f} km")
 
         console.print(details_table)

@@ -31,8 +31,8 @@ class QuakeResponse(BaseModel):
             0
 
             >>> from datetime import datetime
-            >>> from quake_cli.models.properties import QuakeProperties
-            >>> from quake_cli.models.geometry import QuakeGeometry
+            >>> from gnet.models.properties import QuakeProperties
+            >>> from gnet.models.geometry import QuakeGeometry
             >>> props = QuakeProperties(
             ...     publicID="2023geonet001",
             ...     time=datetime(2023, 1, 1, 12, 0, 0),
@@ -59,8 +59,8 @@ class QuakeResponse(BaseModel):
             True
 
             >>> from datetime import datetime
-            >>> from quake_cli.models.properties import QuakeProperties
-            >>> from quake_cli.models.geometry import QuakeGeometry
+            >>> from gnet.models.properties import QuakeProperties
+            >>> from gnet.models.geometry import QuakeGeometry
             >>> props = QuakeProperties(
             ...     publicID="2023geonet001",
             ...     time=datetime(2023, 1, 1, 12, 0, 0),
@@ -88,8 +88,8 @@ class QuakeResponse(BaseModel):
 
         Examples:
             >>> from datetime import datetime
-            >>> from quake_cli.models.properties import QuakeProperties
-            >>> from quake_cli.models.geometry import QuakeGeometry
+            >>> from gnet.models.properties import QuakeProperties
+            >>> from gnet.models.geometry import QuakeGeometry
             >>> props = QuakeProperties(
             ...     publicID="2023geonet001",
             ...     time=datetime(2023, 1, 1, 12, 0, 0),
@@ -130,8 +130,8 @@ class QuakeResponse(BaseModel):
 
         Examples:
             >>> from datetime import datetime
-            >>> from quake_cli.models.properties import QuakeProperties
-            >>> from quake_cli.models.geometry import QuakeGeometry
+            >>> from gnet.models.properties import QuakeProperties
+            >>> from gnet.models.geometry import QuakeGeometry
             >>> props1 = QuakeProperties(
             ...     publicID="quake1", time=datetime(2023, 1, 1),
             ...     depth=5.0, magnitude=3.0, locality="Place1", quality="best"
@@ -176,8 +176,8 @@ class QuakeResponse(BaseModel):
 
         Examples:
             >>> from datetime import datetime
-            >>> from quake_cli.models.properties import QuakeProperties
-            >>> from quake_cli.models.geometry import QuakeGeometry
+            >>> from gnet.models.properties import QuakeProperties
+            >>> from gnet.models.geometry import QuakeGeometry
             >>> props1 = QuakeProperties(
             ...     publicID="quake1", time=datetime(2023, 1, 1),
             ...     depth=5.0, magnitude=3.0, locality="Place1", quality="best", mmi=2
