@@ -8,6 +8,8 @@ quake-cli is Pull data from GeoNet API. It follows modern Python development pra
 
 **Key Features:**
 - Modern Python 3.12+ with comprehensive type hints
+- **Functional error handling with Result types using logerr**
+- **Automatic error logging with structured context**
 - Unified development experience with pixi task management
 - Comprehensive testing with pytest
 - Code quality enforcement with ruff and mypy (100% compliance required)
@@ -69,9 +71,11 @@ pixi run check-all                # Run all tests + quality checks
 
 ### Core Principles
 - **Modern Python patterns**: Use Python 3.12+ features and type hints
+- **Functional error handling**: Use Result types instead of exceptions for predictable error flows
+- **Automatic observability**: Structured logging with logerr for all operations
 - **Unified development experience**: Local commands match CI/CD exactly
 - **Quality enforcement**: 100% ruff compliance, comprehensive mypy typing
-- **Comprehensive testing**: Unit tests
+- **Comprehensive testing**: Unit tests with Result pattern validation
 - **Async-first design**: Support both sync and async APIs where appropriate
 - **Documentation-driven**: Keep docs up-to-date and comprehensive
 - **Security-conscious**: Regular dependency scanning and security checks
@@ -98,11 +102,122 @@ quake-cli/
 ### API Design Principles
 - **Explicit over implicit**: Clear function signatures and parameters
 - **Type safety first**: Full mypy coverage with strict settings
-- **Error handling**: Proper exception handling and informative error messages
+- **Result-based error handling**: Use Result types for predictable error propagation
+- **Functional composition**: Chain operations using `.then()` and `.map()` methods
+- **Match statement patterns**: Use pattern matching for Result handling instead of `.is_err()`
 - **Async compatibility**: Consistent APIs between sync and async versions
 - **Modern Python patterns**: Use match statements, union types, and built-in generics
+- **Automatic logging**: All errors automatically logged with structured context
 - **Documentation**: Comprehensive docstrings with examples
 - **Testing**: Every public function should have comprehensive tests
+
+## Result-Based Error Handling (MANDATORY)
+
+**This project uses functional error handling with logerr Result types instead of exceptions for predictable error flows.**
+
+### Required Result Patterns
+
+**✅ ALWAYS use Result types for fallible operations:**
+```python
+from logerr import Ok, Err, Result
+
+# Define Result type aliases
+type QuakeResult = Result[QuakeResponse, str]
+type FeatureResult = Result[QuakeFeature, str]
+
+async def get_quakes(self, limit: int | None = None) -> QuakeResult:
+    result = await self._make_request("quake", params)
+
+    def parse_and_limit_response(data: dict[str, Any]) -> QuakeResult:
+        try:
+            response = QuakeResponse.model_validate(data)
+            if limit is not None and limit > 0:
+                response.features = response.features[:limit]
+            return Ok(response)
+        except Exception as e:
+            return Err(f"Failed to parse response: {e!s}")
+
+    return result.then(parse_and_limit_response)  # Functional chaining
+```
+
+**✅ Use match statements for Result handling:**
+```python
+# In CLI handlers
+def handle_result(result: Result) -> Any:
+    match result:
+        case Ok(value):
+            return value
+        case Err(error_msg):
+            console.print(f"[red]Error:[/red] {error_msg}")
+            raise typer.Exit(1)
+
+# In API operations
+match result:
+    case Err(error):
+        return Err(f"Health check failed: {error}")
+    case Ok(_):
+        return Ok(True)
+```
+
+**✅ Chain operations with .then() and .map():**
+```python
+# Functional composition instead of unwrapping
+return (await self.get_quakes())
+    .then(apply_magnitude_filters)
+    .then(apply_mmi_filters)
+    .map(limit_results)
+```
+
+**❌ NEVER use these anti-patterns:**
+```python
+# ❌ Don't unwrap Results manually
+if result.is_err():
+    return result
+data = result.unwrap()  # Avoid this
+
+# ❌ Don't use exceptions for predictable errors
+try:
+    response = await api_call()
+    if response.status_code >= 400:
+        raise APIError("Bad response")  # Use Result instead
+except APIError as e:
+    handle_error(e)
+
+# ❌ Don't use is_err() when match statements are clearer
+if result.is_err():
+    handle_error(result.unwrap_err())
+else:
+    process_success(result.unwrap())
+```
+
+### Automatic Error Logging
+
+**All Result errors are automatically logged with structured context:**
+```python
+# Automatic logging when Result contains errors
+result = await client.get_quakes()
+# If error occurs, logerr automatically logs:
+# 2025-09-28 16:10:29 | ERROR | quake_cli.client:_make_request:158 - API error occurred
+
+# Enable verbose logging in CLI
+pixi run quake list --verbose  # Shows detailed error traces
+```
+
+### Result Type Guidelines
+
+**Define clear Result type aliases:**
+```python
+# ✅ Clear type aliases for common Result patterns
+type QuakeResult = Result[QuakeResponse, str]
+type FeatureResult = Result[QuakeFeature, str]
+type DataResult = Result[dict[str, Any], str]
+```
+
+**Use Result composition for complex operations:**
+```python
+# ✅ Compose operations functionally
+return (await self.get_quakes()).then(apply_filters)
+```
 
 ## Modern Python 3.12+ Typing Requirements
 

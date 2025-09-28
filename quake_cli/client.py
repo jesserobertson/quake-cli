@@ -184,23 +184,20 @@ class GeoNetClient:
             # Default to MMI=-1 to get all earthquakes
             params["MMI"] = -1
 
-        # Make the API request
+        # Make the API request and chain operations
         result = await self._make_request("quake", params)
 
-        if result.is_err():
-            return result  # type: ignore[return-value]
+        def parse_and_limit_response(data: dict[str, Any]) -> QuakeResult:
+            try:
+                response = QuakeResponse.model_validate(data)
+                # Apply client-side limit if specified
+                if limit is not None and limit > 0:
+                    response.features = response.features[:limit]
+                return Ok(response)
+            except Exception as e:
+                return Err(f"Failed to parse response: {e!s}")
 
-        try:
-            data = result.unwrap()
-            response = QuakeResponse.model_validate(data)
-
-            # Apply client-side limit if specified
-            if limit is not None and limit > 0:
-                response.features = response.features[:limit]
-
-            return Ok(response)
-        except Exception as e:
-            return Err(f"Failed to parse response: {e!s}")
+        return result.then(parse_and_limit_response)
 
     async def get_quake(self, public_id: str) -> FeatureResult:
         """
@@ -215,22 +212,21 @@ class GeoNetClient:
         if not public_id.strip():
             return Err("public_id cannot be empty")
 
-        # Make the API request
+        # Make the API request and chain operations
         result = await self._make_request(f"quake/{public_id.strip()}")
 
-        if result.is_err():
-            return result  # type: ignore[return-value]
+        def parse_and_extract_feature(data: dict[str, Any]) -> FeatureResult:
+            try:
+                response = QuakeResponse.model_validate(data)
+                match response.is_empty:
+                    case True:
+                        return Err(f"Earthquake {public_id} not found")
+                    case False:
+                        return Ok(response.features[0])
+            except Exception as e:
+                return Err(f"Failed to parse response: {e!s}")
 
-        try:
-            data = result.unwrap()
-            response = QuakeResponse.model_validate(data)
-
-            if response.is_empty:
-                return Err(f"Earthquake {public_id} not found")
-
-            return Ok(response.features[0])
-        except Exception as e:
-            return Err(f"Failed to parse response: {e!s}")
+        return result.then(parse_and_extract_feature)
 
     async def get_quake_history(self, public_id: str) -> HistoryResult:
         """
@@ -245,15 +241,14 @@ class GeoNetClient:
         if not public_id.strip():
             return Err("public_id cannot be empty")
 
-        # Make the API request
+        # Make the API request and process data
         result = await self._make_request(f"quake/history/{public_id.strip()}")
 
-        if result.is_err():
-            return result  # type: ignore[return-value]
+        def normalize_history_data(data: dict[str, Any] | list[Any]) -> HistoryResult:
+            history = data if isinstance(data, list) else [data]
+            return Ok(history)
 
-        data = result.unwrap()
-        history = data if isinstance(data, list) else [data]
-        return Ok(history)
+        return result.then(normalize_history_data)
 
     async def get_quake_stats(self) -> StatsResult:
         """
@@ -292,29 +287,27 @@ class GeoNetClient:
         Returns:
             Result containing filtered QuakeResponse or error message
         """
-        # Get all quakes first
+        # Get all quakes first and apply filters
         result = await self.get_quakes()
 
-        if result.is_err():
-            return result
+        def apply_filters(response: QuakeResponse) -> QuakeResult:
+            # Apply magnitude filters
+            if min_magnitude is not None or max_magnitude is not None:
+                response.features = response.filter_by_magnitude(
+                    min_magnitude, max_magnitude
+                )
 
-        response = result.unwrap()
+            # Apply MMI filters
+            if min_mmi is not None or max_mmi is not None:
+                response.features = response.filter_by_mmi(min_mmi, max_mmi)
 
-        # Apply magnitude filters
-        if min_magnitude is not None or max_magnitude is not None:
-            response.features = response.filter_by_magnitude(
-                min_magnitude, max_magnitude
-            )
+            # Apply limit
+            if limit is not None and limit > 0:
+                response.features = response.features[:limit]
 
-        # Apply MMI filters
-        if min_mmi is not None or max_mmi is not None:
-            response.features = response.filter_by_mmi(min_mmi, max_mmi)
+            return Ok(response)
 
-        # Apply limit
-        if limit is not None and limit > 0:
-            response.features = response.features[:limit]
-
-        return Ok(response)
+        return result.then(apply_filters)
 
     async def health_check(self) -> Result[bool, str]:
         """
@@ -324,9 +317,12 @@ class GeoNetClient:
             Result containing True if API is accessible, error message otherwise
         """
         result = await self._make_request("")
-        if result.is_err():
-            return Err(f"Health check failed: {result.unwrap_err()}")
-        return Ok(True)
+
+        match result:
+            case Err(error):
+                return Err(f"Health check failed: {error}")
+            case Ok(_):
+                return Ok(True)
 
 
 # Export public API

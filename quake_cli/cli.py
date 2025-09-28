@@ -20,7 +20,7 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from logerr import Result
+from logerr import Err, Ok, Result
 
 from quake_cli.client import GeoNetClient, GeoNetError
 import quake_cli.models
@@ -77,17 +77,17 @@ OutputFormat = typer.Option(
 
 def handle_result(result: Result) -> Any:
     """Handle Result types and convert errors to CLI exits."""
-    if result.is_ok():
-        return result.unwrap()
-    else:
-        error_msg = result.unwrap_err()
-        if _verbose_logging:
-            # In verbose mode, the error is already logged by logerr
-            console.print(f"[red]Error:[/red] {error_msg}")
-        else:
-            # In non-verbose mode, show a clean error message
-            console.print(f"[red]Error:[/red] {error_msg}")
-        raise typer.Exit(1)
+    match result:
+        case Ok(value):
+            return value
+        case Err(error_msg):
+            if _verbose_logging:
+                # In verbose mode, the error is already logged by logerr
+                console.print(f"[red]Error:[/red] {error_msg}")
+            else:
+                # In non-verbose mode, show a clean error message
+                console.print(f"[red]Error:[/red] {error_msg}")
+            raise typer.Exit(1)
 
 
 def handle_errors(func: Callable[..., Any]) -> Callable[..., Any]:

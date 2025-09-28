@@ -50,7 +50,7 @@ docs = ["docs"]
 [tasks]
 
 # CLI application
-quake = { cmd = "python -m quake_cli.cli", description = "Run the GeoNet earthquake CLI" }
+quake = { cmd = "python -m quake_cli", description = "Run the GeoNet earthquake CLI" }
 
 # Unified task scripts
 quality = { cmd = "python scripts/quality.py", description = "Code quality management (linting, formatting, type checking, coverage)" }

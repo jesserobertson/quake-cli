@@ -60,17 +60,15 @@ __all__.extend(
 )
 
 
-# Import main functionality
+# Import main functionality (exclude CLI to avoid circular imports)
 from .client import GeoNetClient, GeoNetError
 from .models import QuakeFeature, QuakeResponse
-from .cli import app as cli_app
 
 __all__.extend([
     "GeoNetClient",
     "GeoNetError",
     "QuakeFeature",
     "QuakeResponse",
-    "cli_app"
 ])
 
 
