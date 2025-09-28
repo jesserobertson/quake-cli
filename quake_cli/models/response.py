@@ -1,123 +1,14 @@
 """
-Pydantic models for GeoNet API data structures.
+Response models for API endpoints.
 
-This module defines the data models used to parse and validate responses
-from the GeoNet API, following modern Python 3.12+ typing patterns.
+This module defines models for API response structures and collection types.
 """
 
-from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, Field
 
-
-class QuakeGeometry(BaseModel):
-    """Geometry information for a quake (GeoJSON Point)."""
-
-    type: Literal["Point"] = Field(description="Geometry type, always 'Point'")
-    coordinates: list[float] = Field(
-        description="Coordinates as [longitude, latitude] or [longitude, latitude, depth]",
-        min_length=2,
-        max_length=3,
-    )
-
-    @property
-    def longitude(self) -> float:
-        """Longitude coordinate.
-
-        Examples:
-            >>> geom = QuakeGeometry(type="Point", coordinates=[174.123, -41.456])
-            >>> geom.longitude
-            174.123
-        """
-        return self.coordinates[0]
-
-    @property
-    def latitude(self) -> float:
-        """Latitude coordinate.
-
-        Examples:
-            >>> geom = QuakeGeometry(type="Point", coordinates=[174.123, -41.456])
-            >>> geom.latitude
-            -41.456
-        """
-        return self.coordinates[1]
-
-    @property
-    def depth(self) -> float | None:
-        """Depth coordinate if available (should match properties.depth).
-
-        Examples:
-            >>> geom = QuakeGeometry(type="Point", coordinates=[174.123, -41.456, 5.2])
-            >>> geom.depth
-            5.2
-
-            >>> geom_2d = QuakeGeometry(type="Point", coordinates=[174.123, -41.456])
-            >>> geom_2d.depth is None
-            True
-        """
-        return self.coordinates[2] if len(self.coordinates) > 2 else None
-
-
-type QualityType = Literal["best", "preliminary", "automatic", "deleted"]
-
-
-class QuakeProperties(BaseModel):
-    """Properties of a quake event."""
-
-    publicID: str = Field(description="Unique quake identifier")
-    time: datetime = Field(description="Origin time of the earthquake")
-    depth: float = Field(description="Depth in kilometers", ge=0)
-    magnitude: float = Field(description="Summary magnitude")
-    locality: str = Field(description="Nearest locality description")
-    MMI: int | None = Field(
-        alias="mmi",
-        description="Modified Mercalli Intensity (-1 to 12)",
-        ge=-1,
-        le=12,
-        default=None,
-    )
-    quality: QualityType = Field(description="Data quality indicator")
-
-    @field_validator("publicID")
-    @classmethod
-    def validate_public_id(cls, v: str) -> str:
-        """Validate publicID format."""
-        if not v.strip():
-            raise ValueError("publicID cannot be empty")
-        return v.strip()
-
-    @field_validator("locality")
-    @classmethod
-    def validate_locality(cls, v: str) -> str:
-        """Validate locality is not empty."""
-        if not v.strip():
-            raise ValueError("locality cannot be empty")
-        return v.strip()
-
-
-class QuakeFeature(BaseModel):
-    """A single earthquake feature (GeoJSON Feature)."""
-
-    type: Literal["Feature"] = Field(description="Feature type, always 'Feature'")
-    properties: QuakeProperties = Field(description="Quake properties")
-    geometry: QuakeGeometry = Field(description="Quake geometry")
-
-    @field_validator("geometry")
-    @classmethod
-    def validate_geometry_depth_matches(
-        cls, v: QuakeGeometry, info: ValidationInfo
-    ) -> QuakeGeometry:
-        """Ensure geometry depth matches properties depth if available."""
-        if hasattr(info, "data") and "properties" in info.data and v.depth is not None:
-            properties_depth = info.data["properties"].depth
-            if (
-                abs(v.depth - properties_depth) > 0.001
-            ):  # Allow for floating point precision
-                raise ValueError(
-                    f"Geometry depth ({v.depth}) must match properties depth ({properties_depth})"
-                )
-        return v
+from .feature import QuakeFeature
 
 
 class QuakeResponse(BaseModel):
@@ -140,6 +31,8 @@ class QuakeResponse(BaseModel):
             0
 
             >>> from datetime import datetime
+            >>> from quake_cli.models.properties import QuakeProperties
+            >>> from quake_cli.models.geometry import QuakeGeometry
             >>> props = QuakeProperties(
             ...     publicID="2023geonet001",
             ...     time=datetime(2023, 1, 1, 12, 0, 0),
@@ -166,6 +59,8 @@ class QuakeResponse(BaseModel):
             True
 
             >>> from datetime import datetime
+            >>> from quake_cli.models.properties import QuakeProperties
+            >>> from quake_cli.models.geometry import QuakeGeometry
             >>> props = QuakeProperties(
             ...     publicID="2023geonet001",
             ...     time=datetime(2023, 1, 1, 12, 0, 0),
@@ -193,6 +88,8 @@ class QuakeResponse(BaseModel):
 
         Examples:
             >>> from datetime import datetime
+            >>> from quake_cli.models.properties import QuakeProperties
+            >>> from quake_cli.models.geometry import QuakeGeometry
             >>> props = QuakeProperties(
             ...     publicID="2023geonet001",
             ...     time=datetime(2023, 1, 1, 12, 0, 0),
@@ -233,6 +130,8 @@ class QuakeResponse(BaseModel):
 
         Examples:
             >>> from datetime import datetime
+            >>> from quake_cli.models.properties import QuakeProperties
+            >>> from quake_cli.models.geometry import QuakeGeometry
             >>> props1 = QuakeProperties(
             ...     publicID="quake1", time=datetime(2023, 1, 1),
             ...     depth=5.0, magnitude=3.0, locality="Place1", quality="best"
@@ -277,6 +176,8 @@ class QuakeResponse(BaseModel):
 
         Examples:
             >>> from datetime import datetime
+            >>> from quake_cli.models.properties import QuakeProperties
+            >>> from quake_cli.models.geometry import QuakeGeometry
             >>> props1 = QuakeProperties(
             ...     publicID="quake1", time=datetime(2023, 1, 1),
             ...     depth=5.0, magnitude=3.0, locality="Place1", quality="best", mmi=2
@@ -316,30 +217,43 @@ class QuakeResponse(BaseModel):
         return filtered
 
 
+class MagnitudeCounts(BaseModel):
+    """Earthquake counts by magnitude for different time periods."""
+
+    days7: dict[str, int] = Field(
+        description="Earthquake counts by magnitude for the last 7 days",
+        default_factory=dict,
+    )
+    days28: dict[str, int] = Field(
+        description="Earthquake counts by magnitude for the last 28 days",
+        default_factory=dict,
+    )
+    days365: dict[str, int] = Field(
+        description="Earthquake counts by magnitude for the last 365 days",
+        default_factory=dict,
+    )
+
+
+class RateData(BaseModel):
+    """Daily earthquake rate data."""
+
+    perDay: dict[str, int] = Field(
+        description="Number of earthquakes per day (ISO date string -> count)",
+        default_factory=dict,
+    )
+
+
 class QuakeStatsResponse(BaseModel):
-    """Response from the quake stats endpoint."""
+    """Response from the quake stats endpoint.
 
-    # Note: The actual structure would depend on the API response
-    # This is a placeholder based on typical stats endpoints
-    total_count: int = Field(description="Total number of quakes")
-    period: str = Field(description="Time period for statistics")
-    max_magnitude: float | None = Field(
-        description="Maximum magnitude in period", default=None
-    )
-    min_magnitude: float | None = Field(
-        description="Minimum magnitude in period", default=None
-    )
-    avg_magnitude: float | None = Field(
-        description="Average magnitude in period", default=None
-    )
+    The actual API returns magnitude counts and daily rates, providing
+    statistical insights into earthquake activity patterns.
+    """
 
-
-# Export all models in the public API
-__all__ = [
-    "QuakeFeature",
-    "QuakeGeometry",
-    "QuakeProperties",
-    "QuakeResponse",
-    "QuakeStatsResponse",
-    "QualityType",
-]
+    magnitudeCount: MagnitudeCounts = Field(
+        description="Earthquake counts by magnitude for different time periods",
+        default_factory=MagnitudeCounts,
+    )
+    rate: RateData = Field(
+        description="Daily earthquake rate statistics", default_factory=RateData
+    )

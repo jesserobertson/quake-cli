@@ -36,14 +36,17 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    # Testing
     "pytest",
     "pytest-cov>=6.2.1,<7",
     "coverage>=7.0.0,<8",
     "pytest-asyncio",
     "pytest-httpx",
+    # Code quality
     "mypy",
     "ruff",
     "pre-commit>=4.2.0,<5",
+    # Build and distribution
     "python-build>=1.2.2.post1,<2",
     "twine>=6.1.0,<7",
 ]

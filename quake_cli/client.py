@@ -254,10 +254,44 @@ class GeoNetClient:
             Result containing earthquake statistics or error message
 
         Note:
-            The exact structure of stats response depends on the API implementation.
-            This returns raw data for now until we can verify the actual structure.
+            The stats endpoint requires regular JSON, not geo+json format.
         """
-        return await self._make_request("quake/stats")
+        if not self.client:
+            return Err("Client not initialized. Use async context manager.")
+
+        @self._create_retry_decorator()  # type: ignore[misc]
+        async def _request() -> httpx.Response:
+            try:
+                assert self.client is not None  # For mypy
+                # Stats endpoint needs regular JSON headers, not geo+json
+                response = await self.client.get(
+                    "quake/stats", headers={"Accept": "application/json;version=2"}
+                )
+                return response
+            except httpx.TimeoutException as e:
+                raise GeoNetTimeoutError(f"Request timed out: {e}") from e
+            except httpx.ConnectError as e:
+                raise GeoNetConnectionError(f"Connection failed: {e}") from e
+
+        try:
+            response = await _request()
+
+            # Check HTTP status
+            if response.status_code >= 400:
+                error_msg = f"API returned {response.status_code}: {response.text}"
+                logger.error(error_msg)
+                return Err(error_msg)
+
+            return Ok(response.json())
+        except GeoNetTimeoutError as e:
+            logger.error(f"Request timeout: {e!s}")
+            return Err(f"Request timed out: {e!s}")
+        except GeoNetConnectionError as e:
+            logger.error(f"Connection error: {e!s}")
+            return Err(f"Connection failed: {e!s}")
+        except Exception as e:
+            logger.error(f"Unexpected error in API request: {e!s}")
+            return Err(f"Unexpected error: {e!s}")
 
     async def search_quakes(
         self,

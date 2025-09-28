@@ -388,24 +388,37 @@ class TestQuakeStatsResponse:
     def test_valid_stats_response(self):
         """Test creating valid stats response."""
         stats = QuakeStatsResponse(
-            total_count=150,
-            period="24 hours",
-            max_magnitude=5.2,
-            min_magnitude=1.8,
-            avg_magnitude=3.4,
+            magnitudeCount={
+                "days7": {"0": 6, "1": 147, "2": 144, "3": 37, "4": 4, "5": 1},
+                "days28": {"0": 59, "1": 527, "2": 537, "3": 117, "4": 32, "5": 5},
+                "days365": {
+                    "0": 1614,
+                    "1": 10031,
+                    "2": 7844,
+                    "3": 1892,
+                    "4": 529,
+                    "5": 64,
+                    "6": 7,
+                },
+            },
+            rate={
+                "perDay": {
+                    "2024-09-28T00:00:00+00:00": 49,
+                    "2024-09-29T00:00:00+00:00": 73,
+                }
+            },
         )
 
-        assert stats.total_count == 150
-        assert stats.period == "24 hours"
-        assert stats.max_magnitude == 5.2
-        assert stats.min_magnitude == 1.8
-        assert stats.avg_magnitude == 3.4
+        assert stats.magnitudeCount.days7["1"] == 147
+        assert stats.magnitudeCount.days28["2"] == 537
+        assert stats.magnitudeCount.days365["1"] == 10031
+        assert stats.rate.perDay["2024-09-28T00:00:00+00:00"] == 49
 
     def test_optional_magnitude_fields(self):
-        """Test that magnitude fields can be None."""
-        stats = QuakeStatsResponse(total_count=0, period="24 hours")
+        """Test that fields can be empty dicts."""
+        stats = QuakeStatsResponse()
 
-        assert stats.total_count == 0
-        assert stats.max_magnitude is None
-        assert stats.min_magnitude is None
-        assert stats.avg_magnitude is None
+        assert stats.magnitudeCount.days7 == {}
+        assert stats.magnitudeCount.days28 == {}
+        assert stats.magnitudeCount.days365 == {}
+        assert stats.rate.perDay == {}

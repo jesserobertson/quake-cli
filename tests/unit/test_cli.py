@@ -3,7 +3,8 @@
 import pytest
 from typer.testing import CliRunner
 
-from quake_cli.cli import app, create_quakes_table, format_datetime, output_data
+from quake_cli.cli import app
+from quake_cli.cli.output import create_quakes_table, format_datetime, output_data
 from quake_cli.models import QuakeFeature, QuakeGeometry, QuakeProperties
 
 

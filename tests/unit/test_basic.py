@@ -68,16 +68,6 @@ class TestAsyncSupport:
     """Test async functionality support."""
 
     @pytest.mark.asyncio
-    async def test_async_import(self):
-        """Test that async modules can be imported."""
-        try:
-            # Import async components if they exist
-            import quake_cli.async_module  # noqa: F401
-        except ImportError:
-            # Async module might not exist yet, skip test
-            pytest.skip("Async module not implemented yet")
-
-    @pytest.mark.asyncio
     async def test_basic_async_functionality(self):
         """Test basic async functionality."""
 

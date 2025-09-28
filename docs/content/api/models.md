@@ -2,6 +2,13 @@
 
 The quake-cli package provides comprehensive Pydantic models for handling earthquake data from the GeoNet API. All models include validation, type hints, and extensive examples.
 
+The models are organized in a modular structure for better maintainability and clarity:
+
+- **Geometry**: Location and coordinate data
+- **Properties**: Earthquake metadata and characteristics
+- **Features**: Combined geometry and properties (GeoJSON features)
+- **Responses**: API response containers and statistics
+
 ## Core Models
 
 ::: quake_cli.models.QuakeGeometry
@@ -23,6 +30,14 @@ The quake-cli package provides comprehensive Pydantic models for handling earthq
         - get_by_id
         - filter_by_magnitude
         - filter_by_mmi
+
+## Statistics Models
+
+The statistics models provide structured access to earthquake statistics data:
+
+::: quake_cli.models.MagnitudeCounts
+
+::: quake_cli.models.RateData
 
 ::: quake_cli.models.QuakeStatsResponse
 

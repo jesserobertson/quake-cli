@@ -1,26 +1,72 @@
 # quake-cli
 
-A modern Python library for querying earthquake data from the GeoNet API
+A modern Python library and CLI tool for querying earthquake data from the GeoNet API with lightweight dependencies and modular architecture.
 
 ## Features
 
+### Core Library
 - 🌍 **GeoNet API Integration** - Query real-time earthquake data from New Zealand's GeoNet service
 - ⚡ **Async Performance** - Fast async HTTP client with automatic retries and error handling
 - 🔍 **Flexible Filtering** - Filter earthquakes by magnitude, MMI, location, and time
-- 📊 **Type-Safe Data Models** - Pydantic models for reliable earthquake data structures
+- 📊 **Type-Safe Data Models** - Modular Pydantic models for reliable earthquake data structures
 - 🔄 **Result-Based Error Handling** - Functional error handling with composable Result types
 - 🚀 **Modern Python 3.12+** - Uses latest Python features with comprehensive type hints
 - 📖 **Tested Examples** - All documentation examples are automatically tested for accuracy
+
+### CLI Tool
+- 💻 **Command-Line Interface** - Full-featured CLI for interactive earthquake data queries
+- 📋 **Multiple Output Formats** - JSON, CSV, and formatted table output
+- 🎯 **Smart Progress Indicators** - Progress bars for table output, silent for structured data
+- 📂 **File Export** - Save results directly to files
+- 🔧 **Modular Architecture** - Clean separation of commands, output handling, and business logic
+
+### Development & Distribution
+- 📦 **Lightweight Base Install** - Core dependencies only (5 packages vs 15+)
+- 🛠️ **Optional Dependency Groups** - Separate `dev` and `docs` installs for development
+- 🧪 **Comprehensive Testing** - 90+ tests including integration tests with real API
+- ✅ **100% Quality Compliance** - Full ruff and mypy compliance with automated checks
 
 ## Quick Start
 
 ### Installation
 
+**Basic Installation (Lightweight)**
 ```bash
 pip install quake_cli
 ```
 
-### Basic Usage
+**With Optional Dependencies**
+```bash
+# For development
+pip install quake_cli[dev]
+
+# For documentation
+pip install quake_cli[docs]
+
+# Everything
+pip install quake_cli[all]
+```
+
+### CLI Usage
+
+```bash
+# List recent earthquakes
+quake list --limit 10
+
+# Filter by magnitude
+quake list --min-magnitude 4.0 --limit 5
+
+# Export to JSON
+quake list --format json --output earthquakes.json
+
+# Get earthquake statistics
+quake stats --format json
+
+# Check API health
+quake health
+```
+
+### Library Usage
 
 ```python
 import asyncio

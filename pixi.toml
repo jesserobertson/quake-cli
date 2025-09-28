@@ -7,12 +7,10 @@ platforms = ["osx-arm64", "linux-64", "win-64"]
 
 [dependencies]
 python = ">=3.12,<3.13"
-# Core dependencies
+# Core CLI dependencies only
 tenacity = ">=9.1.2,<10"
 httpx = ">=0.28.1,<0.29"
 pydantic = ">=2.11.9,<3"
-pytest-httpx = ">=0.35.0,<0.36"
-# CLI dependencies
 typer = ">=0.9.0,<1"
 rich = ">=13.0.0,<14"
 
@@ -24,6 +22,7 @@ pytest = "*"
 pytest-cov = ">=6.2.1,<7"
 coverage = ">=7.0.0,<8"
 pytest-asyncio = "*"
+pytest-httpx = ">=0.35.0,<0.36"
 # Code quality
 mypy = "*"
 ruff = "*"
@@ -31,7 +30,6 @@ pre-commit = ">=4.2.0,<5"
 # Build and distribution
 python-build = ">=1.2.2.post1,<2"
 twine = ">=6.1.0,<7"
-# CLI tools (moved to main dependencies)
 [feature.docs.dependencies]
 mkdocs = "*"
 mkdocs-material = "*"
@@ -41,6 +39,7 @@ mkdocstrings-python = "*"
 [pypi-dependencies]
 sh = ">=2.0.0,<3"
 logerr = { git = "https://github.com/jesserobertson/logerr.git" }
+quake_cli = { path = ".", editable = true }
 
 [environments]
 default = ["dev", "docs"]
@@ -50,7 +49,7 @@ docs = ["docs"]
 [tasks]
 
 # CLI application
-quake = { cmd = "python -m quake_cli", description = "Run the GeoNet earthquake CLI" }
+quake = { cmd = "quake", description = "Run the GeoNet earthquake CLI" }
 
 # Unified task scripts
 quality = { cmd = "python scripts/quality.py", description = "Code quality management (linting, formatting, type checking, coverage)" }
