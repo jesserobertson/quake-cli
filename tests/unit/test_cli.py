@@ -5,7 +5,7 @@ from typer.testing import CliRunner
 
 from gnet.cli.main import app
 from gnet.cli.output import create_quakes_table, format_datetime, output_data
-from gnet.models import quake
+from gnet.models import quake, common
 
 
 class TestCLIBasics:
@@ -20,11 +20,16 @@ class TestCLIBasics:
         """Test help command works."""
         result = runner.invoke(app, ["--help"])
         assert result.exit_code == 0
-        assert "GeoNet Earthquake CLI" in result.stdout
+        assert "GeoNet API client" in result.stdout
 
     def test_command_structure(self, runner):
         """Test that all expected commands are available."""
         result = runner.invoke(app, ["--help"])
+        assert "quake" in result.stdout
+        assert "volcano" in result.stdout
+
+        # Test quake subcommands
+        result = runner.invoke(app, ["quake", "--help"])
         assert "list" in result.stdout
         assert "get" in result.stdout
         assert "health" in result.stdout
@@ -45,18 +50,22 @@ class TestCLIHelpers:
 
     def test_create_quakes_table(self):
         """Test table creation."""
+        from datetime import datetime
+
         feature = quake.Feature(
             type="Feature",
-            properties=quake.Properties(
+            properties=quake.Properties.from_legacy_api(
                 publicID="2024p123456",
-                time="2024-01-15T10:30:00.000Z",
-                depth=5.5,
+                time=datetime(2024, 1, 15, 10, 30, 0),
                 magnitude=4.2,
+                depth=5.5,
                 locality="Wellington",
-                mmi=4,
+                MMI=4,
                 quality="best",
+                longitude=174.7633,
+                latitude=-36.8485,
             ),
-            geometry=quake.Geometry(
+            geometry=common.Point(
                 type="Point",
                 coordinates=[174.7633, -36.8485, 5.5],
             ),

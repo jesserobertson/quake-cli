@@ -5,10 +5,10 @@ import pytest
 
 def test_package_imports():
     """Test that the main package can be imported."""
-    import quake_cli
+    import gnet
 
-    assert quake_cli.__version__ == "0.1.0"
-    assert quake_cli.__author__ == "Jess Robertson"
+    assert gnet.__version__ == "0.1.0"
+    assert gnet.__author__ == "Jess Robertson"
 
 
 def test_dependencies_import():
@@ -30,39 +30,37 @@ def test_dependencies_import():
 
 def test_exception_classes():
     """Test that custom exception classes are available."""
-    from quake_cli import QuakeCliConfigError, QuakeCliError
+    from gnet import GNetConfigError, GNetError
 
     # Test exception hierarchy
-    assert issubclass(QuakeCliConfigError, QuakeCliError)
-    assert issubclass(QuakeCliError, Exception)
+    assert issubclass(GNetConfigError, GNetError)
+    assert issubclass(GNetError, Exception)
 
     # Test that exceptions can be raised and caught
-    with pytest.raises(QuakeCliError):
-        raise QuakeCliError("Test error")
+    with pytest.raises(GNetError):
+        raise GNetError("Test error")
 
-    with pytest.raises(QuakeCliConfigError):
-        raise QuakeCliConfigError("Test config error")
+    with pytest.raises(GNetConfigError):
+        raise GNetConfigError("Test config error")
 
 
 def test_public_api():
     """Test that the public API is correctly exposed."""
-    import quake_cli
+    import gnet
 
     # Check that __all__ contains expected items (excluding CLI to avoid circular imports)
     expected_exports = {
         "__author__",
         "__email__",
         "__version__",
-        "QuakeCliError",
-        "QuakeCliConfigError",
+        "GNetError",
+        "GNetConfigError",
         "GeoNetClient",
         "GeoNetError",
-        "QuakeFeature",
-        "QuakeResponse",
     }
 
-    assert set(quake_cli.__all__) == expected_exports
+    assert set(gnet.__all__) == expected_exports
 
     # Check that all exported items can be accessed
     for item in expected_exports:
-        assert hasattr(quake_cli, item), f"Missing export: {item}"
+        assert hasattr(gnet, item), f"Missing export: {item}"
