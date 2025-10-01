@@ -480,11 +480,503 @@ All existing dev dependencies plus any additional testing tools for CLI testing.
 - Export to different formats (KML, GeoJSON)
 - Integration with mapping services
 - Caching for offline access
+- **Real-time monitoring** - See monitor design below
 
 ### Performance Optimizations
 - Response caching
 - Concurrent API requests with tenacity retries
 - Streaming for large datasets
 - Progress bars for long operations with retry feedback
+
+---
+
+# gnet monitor - Real-time Monitoring Design
+
+## Overview
+
+The `gnet monitor` command provides real-time monitoring of geological hazards with configurable alerts and notifications. It continuously polls GeoNet APIs and triggers actions when specified conditions are met.
+
+## Command Structure
+
+```bash
+gnet monitor [TYPE] [OPTIONS]
+```
+
+### Monitoring Types
+
+```bash
+# Monitor all hazards
+gnet monitor all --config monitor.yaml
+
+# Monitor specific hazard types
+gnet monitor quake --min-magnitude 4.0 --region wellington
+gnet monitor volcano --volcano ruapehu --min-level 2
+gnet monitor intensity --min-mmi 4
+
+# Combined monitoring
+gnet monitor quake volcano --config monitor.yaml
+```
+
+## Core Features
+
+### 1. Real-time Event Streaming
+
+```python
+# Continuous polling with configurable intervals
+class MonitorConfig:
+    poll_interval: int = 30  # seconds
+    backoff_strategy: str = "exponential"
+    max_retries: int = 5
+    deduplication_window: int = 300  # 5 minutes
+```
+
+### 2. Filtering & Triggers
+
+```yaml
+# monitor.yaml configuration
+monitors:
+  earthquakes:
+    enabled: true
+    filters:
+      min_magnitude: 4.0
+      max_depth: 50
+      regions:
+        - name: wellington
+          bounds: [-41.5, 174.5, -41.0, 175.0]
+        - name: auckland
+          bounds: [-37.0, 174.5, -36.5, 175.0]
+    triggers:
+      - magnitude >= 5.0
+      - mmi >= 5
+      - location in regions.wellington and magnitude >= 4.0
+
+  volcanoes:
+    enabled: true
+    volcanoes: [ruapehu, white_island, tongariro]
+    triggers:
+      - alert_level >= 2
+      - alert_level changed
+      - volcanic_earthquakes > 50 per hour
+```
+
+### 3. Alert Actions
+
+```python
+type AlertAction = Literal["console", "file", "webhook", "email", "script"]
+
+class AlertConfig:
+    actions: list[AlertAction]
+
+    # Console output
+    console:
+        format: str = "rich"  # rich, json, simple
+        sound: bool = True
+
+    # File logging
+    file:
+        path: Path = "./monitoring.log"
+        format: str = "jsonl"
+        rotate: str = "daily"
+
+    # Webhooks
+    webhooks:
+        - url: "https://hooks.slack.com/..."
+          template: "slack"
+        - url: "https://discord.com/api/webhooks/..."
+          template: "discord"
+        - url: "https://api.custom.com/alerts"
+          template: "custom"
+          headers: {"Authorization": "Bearer ..."}
+
+    # Email (via SMTP or service)
+    email:
+        to: ["emergency@example.com"]
+        smtp_server: "smtp.gmail.com"
+        template: "detailed"
+
+    # Custom scripts
+    scripts:
+        - path: "./alert_handler.py"
+          args: ["--severity", "{magnitude}"]
+```
+
+## Implementation Architecture
+
+### 1. Monitor Engine
+
+```python
+class MonitorEngine:
+    """Core monitoring engine with event loop."""
+
+    def __init__(self, config: MonitorConfig):
+        self.config = config
+        self.event_cache = EventCache()  # Deduplication
+        self.alert_dispatcher = AlertDispatcher()
+        self.health_monitor = HealthMonitor()
+
+    async def run(self) -> None:
+        """Main monitoring loop."""
+        tasks = []
+        if self.config.earthquakes.enabled:
+            tasks.append(self.monitor_earthquakes())
+        if self.config.volcanoes.enabled:
+            tasks.append(self.monitor_volcanoes())
+
+        await asyncio.gather(*tasks)
+
+    async def monitor_earthquakes(self) -> None:
+        """Monitor earthquake events."""
+        while True:
+            try:
+                result = await self.fetch_earthquakes()
+                new_events = self.event_cache.filter_new(result)
+
+                for event in new_events:
+                    if self.evaluate_triggers(event):
+                        await self.alert_dispatcher.dispatch(event)
+
+            except Exception as e:
+                await self.handle_error(e)
+
+            await asyncio.sleep(self.config.poll_interval)
+```
+
+### 2. Event Processing Pipeline
+
+```python
+class EventProcessor:
+    """Process and enrich events before alerting."""
+
+    async def process(self, event: QuakeFeature) -> ProcessedEvent:
+        # Enrich with additional data
+        enriched = await self.enrich_event(event)
+
+        # Calculate derived metrics
+        enriched.estimated_impact = self.calculate_impact(event)
+        enriched.affected_population = await self.get_population_data(event)
+
+        # Add contextual information
+        enriched.historical_context = await self.get_historical_context(event)
+        enriched.nearby_events = await self.get_nearby_events(event)
+
+        return enriched
+```
+
+### 3. Alert Templates
+
+```python
+# Slack template
+SLACK_TEMPLATE = {
+    "text": "Earthquake Alert",
+    "blocks": [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "🚨 M{magnitude} Earthquake Detected"
+            }
+        },
+        {
+            "type": "section",
+            "fields": [
+                {"type": "mrkdwn", "text": "*Location:* {location}"},
+                {"type": "mrkdwn", "text": "*Depth:* {depth} km"},
+                {"type": "mrkdwn", "text": "*Time:* {time}"},
+                {"type": "mrkdwn", "text": "*MMI:* {mmi}"}
+            ]
+        }
+    ]
+}
+
+# Email template
+EMAIL_TEMPLATE = """
+EARTHQUAKE ALERT - M{magnitude}
+
+Location: {location}
+Time: {time} UTC
+Depth: {depth} km
+Intensity: MMI {mmi}
+
+Estimated Impact:
+- Affected Population: {affected_population:,}
+- Expected Shaking: {shaking_description}
+
+View Details: https://www.geonet.org.nz/earthquake/{publicid}
+
+This is an automated alert from gnet monitor.
+"""
+```
+
+## CLI Interface
+
+### Basic Monitoring
+
+```bash
+# Simple magnitude-based monitoring
+gnet monitor quake --min-magnitude 4.0
+
+# Region-specific monitoring
+gnet monitor quake --region wellington --min-magnitude 3.5
+
+# Volcano monitoring
+gnet monitor volcano --volcano ruapehu
+
+# Multiple hazard monitoring
+gnet monitor all --min-magnitude 4.0 --min-alert-level 2
+```
+
+### Advanced Configuration
+
+```bash
+# Use configuration file
+gnet monitor --config monitor.yaml
+
+# Override config options
+gnet monitor --config monitor.yaml --poll-interval 10
+
+# Dry run mode (test triggers without sending alerts)
+gnet monitor --config monitor.yaml --dry-run
+
+# Verbose debugging
+gnet monitor --config monitor.yaml --verbose
+```
+
+### Output Examples
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ gnet monitor - Real-time Geological Hazard Monitoring      │
+├─────────────────────────────────────────────────────────────┤
+│ Status: ACTIVE | Uptime: 02:34:15 | Events: 12            │
+│ Monitoring: Earthquakes (M≥4.0), Volcanoes (Level≥2)      │
+└─────────────────────────────────────────────────────────────┘
+
+[2025-10-01 14:23:45] 🔴 ALERT: M5.2 Earthquake
+  Location: 15 km north-east of Wellington
+  Depth: 23 km | MMI: 5 (Moderate)
+  → Webhook notification sent
+  → Email alert dispatched
+
+[2025-10-01 14:45:12] 🟡 WARNING: Ruapehu Alert Level Changed
+  Previous: 1 (Minor unrest)
+  Current: 2 (Moderate unrest)
+  → Monitoring frequency increased
+
+[2025-10-01 15:01:33] ⚪ INFO: M3.8 Earthquake (below threshold)
+  Location: 45 km south of Taupo
+  Depth: 67 km | MMI: 2 (Weak)
+```
+
+## Integration Examples
+
+### Python Script Integration
+
+```python
+from gnet.monitor import Monitor, MonitorConfig
+
+# Programmatic monitoring
+async def custom_monitor():
+    config = MonitorConfig(
+        earthquakes={
+            "min_magnitude": 4.0,
+            "regions": ["wellington", "auckland"]
+        },
+        alerts={
+            "webhook": "https://myapp.com/alerts",
+            "custom_handler": process_alert
+        }
+    )
+
+    monitor = Monitor(config)
+
+    # Custom event handler
+    @monitor.on_event
+    async def handle_event(event):
+        if event.magnitude >= 5.0:
+            await send_emergency_alert(event)
+
+    await monitor.start()
+
+# Custom alert processor
+async def process_alert(event):
+    # Custom logic for handling alerts
+    if event.type == "earthquake" and event.magnitude >= 6.0:
+        await activate_emergency_protocol()
+```
+
+### Docker Deployment
+
+```dockerfile
+FROM python:3.12-slim
+
+RUN pip install gnet
+
+COPY monitor.yaml /config/monitor.yaml
+
+CMD ["gnet", "monitor", "--config", "/config/monitor.yaml"]
+```
+
+```yaml
+# docker-compose.yaml
+services:
+  gnet-monitor:
+    image: gnet-monitor:latest
+    volumes:
+      - ./config:/config
+      - ./logs:/logs
+    environment:
+      - GNET_LOG_LEVEL=INFO
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+    restart: always
+```
+
+### Systemd Service
+
+```ini
+# /etc/systemd/system/gnet-monitor.service
+[Unit]
+Description=GeoNet Hazard Monitor
+After=network.target
+
+[Service]
+Type=simple
+User=monitor
+WorkingDirectory=/opt/gnet-monitor
+ExecStart=/usr/local/bin/gnet monitor --config /opt/gnet-monitor/config.yaml
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+## Performance Considerations
+
+### Resource Usage
+
+- **Memory**: ~50-100MB base, +10MB per 1000 cached events
+- **CPU**: <5% average, spikes during event processing
+- **Network**: ~1-5 requests/minute per monitor type
+- **Disk I/O**: Minimal, only for logging and caching
+
+### Scaling Strategies
+
+1. **Horizontal Scaling**: Run multiple monitors for different regions
+2. **Event Bus**: Use Redis/RabbitMQ for event distribution
+3. **Database Backend**: Store events in TimescaleDB for analysis
+4. **Load Distribution**: Round-robin API requests across endpoints
+
+## Security Considerations
+
+### API Keys & Credentials
+
+```python
+# Use environment variables or secure vault
+os.environ["GNET_API_KEY"]  # If GeoNet implements auth
+os.environ["SLACK_WEBHOOK_URL"]
+os.environ["EMAIL_PASSWORD"]
+
+# Or use config file with proper permissions
+chmod 600 monitor.yaml
+```
+
+### Webhook Security
+
+- Validate SSL certificates
+- Use webhook signing/HMAC verification
+- Implement rate limiting
+- Whitelist allowed webhook domains
+
+## Future Enhancements
+
+### Phase 1 (MVP)
+- [x] Basic earthquake monitoring
+- [x] Console output alerts
+- [x] Magnitude/region filtering
+- [ ] Configuration file support
+- [ ] Webhook notifications
+
+### Phase 2 (Enhanced)
+- [ ] Volcano monitoring integration
+- [ ] Email notifications
+- [ ] Event deduplication
+- [ ] Historical context in alerts
+- [ ] Custom alert templates
+
+### Phase 3 (Advanced)
+- [ ] Machine learning predictions
+- [ ] Swarm detection algorithms
+- [ ] P-wave/S-wave analysis
+- [ ] Integration with other hazard systems
+- [ ] Mobile app notifications
+- [ ] GraphQL subscriptions
+
+## Testing Strategy
+
+### Unit Tests
+
+```python
+async def test_monitor_trigger_evaluation():
+    """Test trigger condition evaluation."""
+    monitor = Monitor(config)
+
+    event = create_test_event(magnitude=5.2)
+    assert monitor.evaluate_triggers(event) == True
+
+    event = create_test_event(magnitude=3.0)
+    assert monitor.evaluate_triggers(event) == False
+
+async def test_event_deduplication():
+    """Test that duplicate events are filtered."""
+    cache = EventCache(window=300)
+
+    event1 = create_test_event(id="2025p001")
+    event2 = create_test_event(id="2025p001")  # Duplicate
+
+    assert cache.is_new(event1) == True
+    assert cache.is_new(event2) == False
+```
+
+### Integration Tests
+
+```python
+@pytest.mark.integration
+async def test_full_monitoring_pipeline():
+    """Test complete monitoring pipeline."""
+    with mock_geonet_api():
+        monitor = Monitor(test_config)
+
+        # Inject test event
+        await inject_test_event(magnitude=5.0)
+
+        # Verify alert was triggered
+        assert await wait_for_alert() == True
+
+        # Verify webhook was called
+        assert mock_webhook.called == True
+```
+
+## Documentation
+
+### User Guide
+- Getting started with monitoring
+- Configuration file reference
+- Alert template customization
+- Troubleshooting guide
+
+### API Reference
+- MonitorConfig schema
+- Event types and properties
+- Webhook payload formats
+- Custom handler interfaces
+
+### Examples
+- Basic earthquake monitoring
+- Multi-region monitoring
+- Custom alert handlers
+- Docker deployment
+- Kubernetes deployment
+
+---
 
 This design provides a solid foundation for implementing a professional-quality CLI tool that follows modern Python practices and integrates seamlessly with the GeoNet API.
