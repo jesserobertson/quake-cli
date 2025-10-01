@@ -106,14 +106,15 @@ class TestQuakeCommands:
         """Test quake list command."""
         # Mock the async context manager and client methods
         mock_client = AsyncMock()
-        mock_client.get_quakes.return_value = Ok(mock_quake_response)
+        # Since no --mmi parameter is provided, the command calls search_quakes, not get_quakes
+        mock_client.search_quakes.return_value = Ok(mock_quake_response)
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
         result = runner.invoke(app, ["quake", "list", "--limit", "1"])
         assert result.exit_code == 0
         assert "2025p123456" in result.stdout
-        assert "Wellington" in result.stdout
-        mock_client.get_quakes.assert_called_once()
+        assert "Wellingt" in result.stdout  # Text is truncated in table display
+        mock_client.search_quakes.assert_called_once()
 
     @patch("gnet.cli.commands.get.GeoNetClient")
     def test_quake_get_command(self, mock_client_class, runner, mock_quake_response):
@@ -324,7 +325,8 @@ class TestErrorHandling:
     def test_api_error_handling(self, mock_client_class, runner):
         """Test that API errors are handled gracefully."""
         mock_client = AsyncMock()
-        mock_client.get_quakes.return_value = Err("API connection failed")
+        # Since no --mmi parameter is provided, the command calls search_quakes, not get_quakes
+        mock_client.search_quakes.return_value = Err("API connection failed")
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
         result = runner.invoke(app, ["quake", "list"])
@@ -332,7 +334,7 @@ class TestErrorHandling:
         assert result.exit_code != 0  # Should exit with error code
         # Check if error is in stdout or stderr
         error_output = result.stdout + (result.stderr or "")
-        assert "Error" in error_output or "AttributeError" in str(result.exception)
+        assert "Error" in error_output
 
     @patch("gnet.cli.commands.get.GeoNetClient")
     def test_earthquake_not_found_error(self, mock_client_class, runner):
@@ -380,7 +382,7 @@ class TestOutputFormats:
     def test_json_output_format(self, mock_client_class, runner, mock_quake_response):
         """Test JSON output format."""
         mock_client = AsyncMock()
-        mock_client.get_quakes.return_value = Ok(mock_quake_response)
+        mock_client.search_quakes.return_value = Ok(mock_quake_response)
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
         result = runner.invoke(
@@ -398,7 +400,7 @@ class TestOutputFormats:
     def test_table_output_format(self, mock_client_class, runner, mock_quake_response):
         """Test table output format (default)."""
         mock_client = AsyncMock()
-        mock_client.get_quakes.return_value = Ok(mock_quake_response)
+        mock_client.search_quakes.return_value = Ok(mock_quake_response)
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
         result = runner.invoke(app, ["quake", "list", "--limit", "1"])
@@ -421,12 +423,12 @@ class TestAliases:
         """Test that 'q' alias works the same as 'quake'."""
         mock_client = AsyncMock()
         mock_response = quake.Response(features=[])
-        mock_client.get_quakes.return_value = Ok(mock_response)
+        mock_client.search_quakes.return_value = Ok(mock_response)
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
         result = runner.invoke(app, ["q", "list", "--limit", "1"])
         assert result.exit_code == 0
-        mock_client.get_quakes.assert_called_once()
+        mock_client.search_quakes.assert_called_once()
 
     @patch("gnet.cli.commands.volcano_alerts.GeoNetClient")
     def test_volcano_alias_v(self, mock_client_class, runner):
